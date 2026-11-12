@@ -100,9 +100,30 @@ class InMemoryOCRRateLimiter:
             return RateLimitDecision(True)
 
 
+class InMemoryDocumentJobRateLimiter:
+    def __init__(self, settings: Settings):
+        self._request_limit = settings.document_job_rate_limit_requests
+        self._window_seconds = settings.rate_limit_window_seconds
+        self._buckets: dict[str, tuple[float, int]] = {}
+        self._lock = asyncio.Lock()
+
+    async def check(self, key: str) -> RateLimitDecision:
+        now = time.monotonic()
+        async with self._lock:
+            start, requests = self._buckets.get(key, (now, 0))
+            if now - start >= self._window_seconds:
+                start, requests = now, 0
+            retry_after = max(1, int(self._window_seconds - (now - start)))
+            if requests >= self._request_limit:
+                return RateLimitDecision(False, "DOCUMENT_JOB_RATE_LIMIT_EXCEEDED", retry_after)
+            self._buckets[key] = (start, requests + 1)
+            return RateLimitDecision(True)
+
+
 _limiter = InMemoryTranslationRateLimiter(get_settings())
 _speech_limiter = InMemorySpeechRateLimiter(get_settings())
 _ocr_limiter = InMemoryOCRRateLimiter(get_settings())
+_document_job_limiter = InMemoryDocumentJobRateLimiter(get_settings())
 
 
 def get_translation_rate_limiter() -> InMemoryTranslationRateLimiter:
@@ -115,6 +136,10 @@ def get_speech_rate_limiter() -> InMemorySpeechRateLimiter:
 
 def get_ocr_rate_limiter() -> InMemoryOCRRateLimiter:
     return _ocr_limiter
+
+
+def get_document_job_rate_limiter() -> InMemoryDocumentJobRateLimiter:
+    return _document_job_limiter
 
 
 async def enforce_translation_rate_limit(

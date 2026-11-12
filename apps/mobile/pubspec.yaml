@@ -1,5 +1,5 @@
 name: lingua_mobile
-description: Lingua AI Translator mobile client — Phase 4D.
+description: Lingua AI Translator mobile client — Phase 5E.
 publish_to: "none"
 version: 0.1.0+1
 
@@ -25,6 +25,7 @@ dependencies:
   path_provider: ^2.1.5
   record: ^5.1.2
   shared_preferences: ^2.3.3
+  share_plus: ^10.1.4
 
 dev_dependencies:
   flutter_lints: ^5.0.0

@@ -71,6 +71,56 @@ export type OCRResponse = {
   blocks: OCRBlock[];
   request_id: string;
 };
+
+export type DocumentJobStatus =
+  | "queued"
+  | "extracting"
+  | "awaiting_review"
+  | "translating"
+  | "exporting"
+  | "completed"
+  | "failed"
+  | "cancelled"
+  | "expired";
+
+export type DocumentJob = {
+  id: string;
+  original_filename: string;
+  content_type: string;
+  document_format: "pdf" | "docx" | "txt";
+  source_language: string | null;
+  size_bytes: number;
+  status: DocumentJobStatus;
+  progress: number;
+  page_count: number | null;
+  ocr_pages: number[];
+  error_code: string | null;
+  error_message: string | null;
+  expires_at: string;
+  created_at: string;
+  updated_at: string;
+  target_language?: string | null;
+  translation_characters?: number;
+  output_content_type?: string | null;
+  output_filename?: string | null;
+};
+
+export type DocumentSegment = {
+  id: string;
+  index: number;
+  source_text: string;
+  translated_text: string | null;
+  kind: string;
+  page: number | null;
+  location: string | null;
+  block_index?: number | null;
+};
+
+export type DocumentSegmentsResponse = {
+  job_id: string;
+  status: DocumentJobStatus;
+  segments: DocumentSegment[];
+};
 export type ApiError = {
   error?: { code?: string; message?: string; request_id?: string };
 };

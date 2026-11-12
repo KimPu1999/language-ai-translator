@@ -24,6 +24,10 @@ Phase 4A/4B adds `GET /api/v1/ocr/capabilities` and multipart `POST /api/v1/ocr/
 
 Phase 4E adds an optional Google Cloud Vision adapter. Tesseract remains the default; Google is selected only with explicit server configuration and per-request cloud consent. Burmese support is experimental, and cloud usage records billable metadata only.
 
+Phase 5A adds bounded PDF, DOCX, and UTF-8 TXT extraction at `/api/v1/documents`. Extraction is review-only, supports structured blocks and OCR fallback for scanned PDF pages, and never translates or stores document contents. See [docs/phase-5a.md](docs/phase-5a.md).
+
+Phase 5B adds a disabled-by-default Celery/Redis document job system with private storage, PostgreSQL job ownership, expiration, cancellation, retries, and metadata-only usage records. See [docs/phase-5b.md](docs/phase-5b.md). Authentication is not yet implemented, so only the explicitly enabled development guest capability flow is available.
+
 ## Current scope
 
 The repository is organized as `apps/web`, `apps/mobile`, `services/api`, `packages/contracts`, `infra`, and `docs`. History and user records have no public endpoints, there are no auth endpoints, source/translated text is not stored by translation requests, and the API refuses non-PostgreSQL URLs.

@@ -1,4 +1,4 @@
-# Lingua Mobile — Phase 4D
+# Lingua Mobile — Phase 5E
 
 Flutter/Dart mobile client for the FastAPI service. The app uses Riverpod for state, GoRouter for navigation, Dio for HTTP, Material 3, SharedPreferences for explicit local saves, a shared blue-white design system, and a small dependency-free EN/MM localization layer.
 
@@ -34,9 +34,19 @@ Add the native permissions required by the plugins when platform folders are gen
 
 The app does not store images, OCR text, or cloud credentials. Camera resources are disposed when capture ends, the route is removed, or the app is backgrounded. Export uses the platform file picker and only writes after the user selects a destination.
 
+## Phase 5E document translation
+
+The Documents route uses the same private FastAPI document job endpoints as the React client. It supports PDF, DOCX, and UTF-8 TXT selection, validates the 10 MB limit and basic file signatures locally, uploads with Dio progress reporting, polls active extraction/translation jobs, and stops polling when a terminal state is reached.
+
+Extracted segments are shown as editable plain text. Translation is only requested after the current review is saved to the backend; no document text is rendered as HTML and no translation result is fabricated when the API returns an error. Cancel, retry, expiration, ownership/authentication errors, and offline failures remain visible in the page state.
+
+Completed files are downloaded through the private ownership-checked endpoint. The user must choose a native save destination or explicitly share the temporary file. Temporary downloaded copies are deleted on clear, controller disposal, and route lifecycle cleanup. The API currently returns the translated artifact in the original document format, so other format buttons remain disabled rather than claiming unsupported conversion.
+
+The app does not add provider credentials or public document URLs. The current backend's development guest capability-token flow is intentionally not embedded in the mobile app; production authentication must be provided by the existing auth layer before document APIs are enabled.
+
 ## Phase 3 scope
 
-Text translation, voice recording, real speech-to-text, editable Myanmar Unicode transcripts, Phase 2 text translation, Azure-backed TTS playback, language/voice selectors, loading/error/retry states, theme switching, and EN/MM switching are implemented. Documents, auth, and provider keys remain outside the app. Recording begins only after explicit user action and stops on cancel, lifecycle changes, unmount, or 15 seconds. Temporary recording and playback files are deleted and are never added to local history.
+Text translation, voice recording, real speech-to-text, editable Myanmar Unicode transcripts, Phase 2 text translation, Azure-backed TTS playback, language/voice selectors, loading/error/retry states, theme switching, EN/MM switching, and document processing are implemented. Auth and provider keys remain outside the app. Recording begins only after explicit user action and stops on cancel, lifecycle changes, unmount, or 15 seconds. Temporary recording and playback files are deleted and are never added to local history.
 
 The existing Phase 3B FastAPI contract accepts bounded raw audio bytes with an `audio/*` content type and `locale` query parameter. The mobile client sends the selected recording bytes directly to that contract; it does not fabricate multipart fields that the current backend does not accept.
 

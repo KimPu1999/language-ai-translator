@@ -3,6 +3,7 @@ import 'package:http_parser/http_parser.dart';
 import 'package:path/path.dart' as path;
 
 import '../models/ocr.dart';
+import '../models/document.dart';
 import '../models/speech.dart';
 import '../models/translation.dart';
 
@@ -65,6 +66,63 @@ class ApiClient {
       'text': text,
     }));
     return TranslationResponse.fromJson(raw);
+  }
+
+  Future<DocumentJob> uploadDocument({required String filePath, String? sourceLanguage, ProgressCallback? onSendProgress, CancelToken? cancelToken}) async {
+    final form = FormData.fromMap({
+      'document': await MultipartFile.fromFile(filePath, filename: path.basename(filePath)),
+      if (sourceLanguage != null) 'source_language': sourceLanguage,
+    });
+    final raw = await _request<Map<String, dynamic>>(() => _dio.post<Map<String, dynamic>>('/api/v1/documents', data: form, cancelToken: cancelToken, onSendProgress: onSendProgress, options: Options(contentType: 'multipart/form-data')));
+    return DocumentJob.fromJson(raw);
+  }
+
+  Future<DocumentJob> getDocument(String id, {CancelToken? cancelToken}) async {
+    final raw = await _request<Map<String, dynamic>>(() => _dio.get<Map<String, dynamic>>('/api/v1/documents/${Uri.encodeComponent(id)}', cancelToken: cancelToken));
+    return DocumentJob.fromJson(raw);
+  }
+
+  Future<DocumentSegmentsResponse> getDocumentSegments(String id, {CancelToken? cancelToken}) async {
+    final raw = await _request<Map<String, dynamic>>(() => _dio.get<Map<String, dynamic>>('/api/v1/documents/${Uri.encodeComponent(id)}/segments', cancelToken: cancelToken));
+    return DocumentSegmentsResponse.fromJson(raw);
+  }
+
+  Future<DocumentSegmentsResponse> updateDocumentSegments(String id, List<DocumentSegment> segments, {CancelToken? cancelToken}) async {
+    final raw = await _request<Map<String, dynamic>>(() => _dio.put<Map<String, dynamic>>('/api/v1/documents/${Uri.encodeComponent(id)}/segments', data: {'segments': segments.map((segment) => segment.toJson()).toList()}, cancelToken: cancelToken));
+    return DocumentSegmentsResponse.fromJson(raw);
+  }
+
+  Future<DocumentJob> translateDocument({required String id, required String? sourceLanguage, required String targetLanguage, required String idempotencyKey, CancelToken? cancelToken}) async {
+    final raw = await _request<Map<String, dynamic>>(() => _dio.post<Map<String, dynamic>>('/api/v1/documents/${Uri.encodeComponent(id)}/translate', data: {'source_language': sourceLanguage, 'target_language': targetLanguage, 'reviewed': true}, cancelToken: cancelToken, options: Options(headers: {'Idempotency-Key': idempotencyKey})));
+    return DocumentJob.fromJson(raw);
+  }
+
+  Future<DocumentJob> cancelDocument(String id, {CancelToken? cancelToken}) async {
+    final raw = await _request<Map<String, dynamic>>(() => _dio.post<Map<String, dynamic>>('/api/v1/documents/${Uri.encodeComponent(id)}/cancel', cancelToken: cancelToken));
+    return DocumentJob.fromJson(raw);
+  }
+
+  Future<DocumentJob> retryDocument(String id, {CancelToken? cancelToken}) async {
+    final raw = await _request<Map<String, dynamic>>(() => _dio.post<Map<String, dynamic>>('/api/v1/documents/${Uri.encodeComponent(id)}/retry', cancelToken: cancelToken));
+    return DocumentJob.fromJson(raw);
+  }
+
+  Future<void> deleteDocument(String id, {CancelToken? cancelToken}) async {
+    await _request<dynamic>(() => _dio.delete<dynamic>('/api/v1/documents/${Uri.encodeComponent(id)}', cancelToken: cancelToken));
+  }
+
+  Future<DocumentDownload> downloadDocument(String id, {CancelToken? cancelToken}) async {
+    try {
+      final response = await _dio.get<List<int>>('/api/v1/documents/${Uri.encodeComponent(id)}/download', cancelToken: cancelToken, options: Options(responseType: ResponseType.bytes));
+      final disposition = response.headers.value('content-disposition') ?? '';
+      final filename = RegExp(r'filename="?([^";]+)').firstMatch(disposition)?.group(1) ?? 'translated-document';
+      return DocumentDownload(bytes: response.data ?? const <int>[], filename: filename, contentType: response.headers.value('content-type') ?? 'application/octet-stream');
+    } on DioException catch (error) {
+      final body = error.response?.data;
+      final map = body is Map ? Map<String, dynamic>.from(body) : <String, dynamic>{};
+      final errorBody = map['error'] is Map ? Map<String, dynamic>.from(map['error'] as Map) : <String, dynamic>{};
+      throw ApiFailure(errorBody['code'] as String? ?? 'DOWNLOAD_FAILED', errorBody['message'] as String? ?? _networkMessage(error), statusCode: error.response?.statusCode);
+    }
   }
 
   Future<VoiceTranscription> transcribeVoice({required List<int> audioBytes, required String locale, required String mimeType, CancelToken? cancelToken}) async {

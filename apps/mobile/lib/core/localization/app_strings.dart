@@ -56,7 +56,6 @@ class AppStrings {
   String get transcriptPlaceholder => isMyanmar ? 'အသံမှ စာသားသည် ဤနေရာတွင် ပေါ်လာမည်…' : 'Your transcript will appear here…';
   String get translating => isMyanmar ? 'ဘာသာပြန်နေသည်…' : 'Translating…';
   String get translationResult => isMyanmar ? 'ဘာသာပြန်ရလဒ်' : 'Translation result';
-  String get voice => isMyanmar ? 'အသံ' : 'Voice';
   String get generateAudio => isMyanmar ? 'အသံဖန်တီးရန်' : 'Generate audio';
   String get generatingAudio => isMyanmar ? 'အသံဖန်တီးနေသည်…' : 'Generating audio…';
   String get audioReady => isMyanmar ? 'အသံအဆင်သင့်ဖြစ်ပါပြီ' : 'Audio ready';
@@ -104,6 +103,46 @@ class AppStrings {
   String get unsupportedImage => isMyanmar ? 'JPEG၊ PNG သို့မဟုတ် WebP ပုံကို အသုံးပြုပါ။' : 'Use a JPEG, PNG, or WebP image.';
   String get ocrFailed => isMyanmar ? 'ပုံမှ စာသားဖတ်၍ မရပါ။' : 'Text could not be extracted from this image.';
   String get cameraClear => isMyanmar ? 'ဆက်ရှင်ရှင်းရန်' : 'Clear session';
+  String get documentTitle => isMyanmar ? 'စာရွက်စာတမ်း ဘာသာပြန်စနစ်' : 'Document translator';
+  String get documentBody => isMyanmar ? 'စာရွက်စာတမ်းကို တင်ပြီး စာသားကို စစ်ဆေးကာ အဆင်သင့်ဖြစ်မှ ဘာသာပြန်ပါ။' : 'Upload a document, review the extracted text, then translate when ready.';
+  String get chooseDocument => isMyanmar ? 'စာရွက်စာတမ်း ရွေးရန်' : 'Choose document';
+  String get documentFormats => isMyanmar ? 'PDF၊ DOCX သို့မဟုတ် UTF-8 TXT · 10 MB အထိ' : 'PDF, DOCX or UTF-8 TXT · up to 10 MB';
+  String get uploadDocument => isMyanmar ? 'စာရွက်စာတမ်း တင်ရန်' : 'Upload document';
+  String get uploading => isMyanmar ? 'တင်နေသည်…' : 'Uploading…';
+  String get reviewExtracted => isMyanmar ? 'ထုတ်ယူထားသောစာကို စစ်ဆေးရန်' : 'Review extracted text';
+  String get reviewExtractedBody => isMyanmar ? 'ဘာသာမပြန်မီ မူရင်းစာပိုဒ်များကို ပြင်ဆင်ပါ။' : 'Edit the source segments before confirming translation.';
+  String get original => isMyanmar ? 'မူရင်း' : 'Original';
+  String get translated => isMyanmar ? 'ဘာသာပြန်ပြီး' : 'Translated';
+  String get saveReview => isMyanmar ? 'စစ်ဆေးချက် သိမ်းရန်' : 'Save review';
+  String get translateDocument => isMyanmar ? 'စာရွက်စာတမ်း ဘာသာပြန်ရန်' : 'Translate document';
+  String get translatingDocument => isMyanmar ? 'စာရွက်စာတမ်း ဘာသာပြန်နေသည်…' : 'Translating document…';
+  String get extractingDocument => isMyanmar ? 'စာသား ထုတ်ယူနေသည်…' : 'Extracting text…';
+  String get cancelDocument => isMyanmar ? 'လုပ်ဆောင်မှု ပယ်ဖျက်ရန်' : 'Cancel processing';
+  String get retryDocument => isMyanmar ? 'ထပ်ကြိုးစားရန်' : 'Retry operation';
+  String get deleteDocument => isMyanmar ? 'စာရွက်စာတမ်း ဖျက်ရန်' : 'Delete document';
+  String get clearDocument => isMyanmar ? 'ဆက်ရှင်ရှင်းရန်' : 'Clear document';
+  String get downloadDocument => isMyanmar ? 'ဖိုင်သိမ်းရန်' : 'Save document';
+  String get shareDocument => isMyanmar ? 'မျှဝေရန်' : 'Share document';
+  String get documentReady => isMyanmar ? 'စာရွက်စာတမ်း အဆင်သင့်ဖြစ်ပါပြီ' : 'Translated document ready';
+  String get documentExpired => isMyanmar ? 'စာရွက်စာတမ်း သက်တမ်းကုန်ပါပြီ' : 'Document session expired';
+  String get documentExpiredBody => isMyanmar ? 'သီးသန့်ဖိုင်ကို ဖယ်ရှားပြီးပါပြီ။ ဆက်လုပ်ရန် ထပ်တင်ပါ။' : 'The private file was removed after expiration. Upload it again to continue.';
+  String get documentCancelled => isMyanmar ? 'လုပ်ဆောင်မှု ပယ်ဖျက်ပြီးပါပြီ' : 'Document processing cancelled';
+  String get documentNoText => isMyanmar ? 'ထုတ်ယူထားသောစာ မရှိပါ။' : 'No extracted text is available.';
+  String get page => isMyanmar ? 'စာမျက်နှာ' : 'Page';
+  String get previousPage => isMyanmar ? 'ယခင်စာမျက်နှာ' : 'Previous page';
+  String get nextPage => isMyanmar ? 'နောက်စာမျက်နှာ' : 'Next page';
+  String get expires => isMyanmar ? 'သက်တမ်းကုန်မည်' : 'Expires';
+  String get queued => isMyanmar ? 'တန်းစီထားသည်' : 'Queued';
+  String get awaitingReview => isMyanmar ? 'စစ်ဆေးရန် စောင့်နေသည်' : 'Awaiting review';
+  String get exporting => isMyanmar ? 'ဖိုင်ပြင်ဆင်နေသည်…' : 'Preparing file…';
+  String get completed => isMyanmar ? 'ပြီးစီးပါပြီ' : 'Completed';
+  String get failed => isMyanmar ? 'မအောင်မြင်ပါ' : 'Failed';
+  String get cancelled => isMyanmar ? 'ပယ်ဖျက်ပြီး' : 'Cancelled';
+  String get expired => isMyanmar ? 'သက်တမ်းကုန်ပါပြီ' : 'Expired';
+  String get documentDownloadOriginal => isMyanmar ? 'API မှ မူရင်းဖော်မတ်ဖြင့် ဖိုင်ကို ပြန်ပေးပါသည်။' : 'The API returns the translated file in its original format.';
+  String get unsupportedDocument => isMyanmar ? 'PDF၊ DOCX နှင့် TXT ဖိုင်များသာ အသုံးပြုနိုင်သည်။' : 'Only PDF, DOCX and TXT files are supported.';
+  String get documentTooLarge => isMyanmar ? 'စာရွက်စာတမ်းသည် 10 MB ထက် မကြီးရပါ။' : 'Documents must be 10 MB or smaller.';
+  String get documentError => isMyanmar ? 'စာရွက်စာတမ်း လုပ်ဆောင်၍ မရပါ။' : 'The document could not be processed.';
 }
 
 class AppStringsDelegate extends LocalizationsDelegate<AppStrings> {

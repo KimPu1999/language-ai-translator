@@ -1,8 +1,9 @@
 from functools import lru_cache
+from typing import Annotated
 from urllib.parse import urlparse
 
 from pydantic import SecretStr, field_validator, model_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -10,7 +11,10 @@ class Settings(BaseSettings):
     app_env: str = "development"
     log_level: str = "INFO"
     database_url: str = "postgresql+asyncpg://localhost:5432/lingua"
-    cors_origins: list[str] = ["http://localhost:3000", "http://localhost:5173"]
+    cors_origins: Annotated[list[str], NoDecode] = [
+        "http://localhost:3000",
+        "http://localhost:5173",
+    ]
     azure_translator_key: str | None = None
     azure_translator_endpoint: str = "https://api.cognitive.microsofttranslator.com"
     azure_translator_region: str | None = None
@@ -37,6 +41,19 @@ class Settings(BaseSettings):
     ocr_google_cloud_credentials_json: SecretStr | None = None
     ocr_rate_limit_requests: int = 30
     ocr_rate_limit_bytes: int = 100_000_000
+    document_max_upload_bytes: int = 10 * 1024 * 1024
+    document_max_pages: int = 30
+    document_max_characters: int = 50_000
+    document_max_segment_characters: int = 3_000
+    document_jobs_enabled: bool = False
+    document_guest_mode_enabled: bool = False
+    document_guest_capability_token: SecretStr | None = None
+    document_storage_root: str = "/var/lib/lingua/documents"
+    document_job_expiration_hours: int = 24
+    document_job_max_attempts: int = 3
+    document_job_rate_limit_requests: int = 10
+    document_job_time_limit_seconds: int = 150
+    document_pdf_font_path: str | None = None
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
@@ -87,6 +104,14 @@ class Settings(BaseSettings):
     @field_validator("ocr_google_cloud_credentials_json", mode="before")
     @classmethod
     def normalize_cloud_credentials(cls, value: str | SecretStr | None) -> str | SecretStr | None:
+        if value is None:
+            return None
+        raw = value.get_secret_value() if isinstance(value, SecretStr) else value
+        return raw.strip() or None
+
+    @field_validator("document_guest_capability_token", mode="before")
+    @classmethod
+    def normalize_guest_token(cls, value: str | SecretStr | None) -> str | SecretStr | None:
         if value is None:
             return None
         raw = value.get_secret_value() if isinstance(value, SecretStr) else value
@@ -170,6 +195,40 @@ class Settings(BaseSettings):
         if value <= 0:
             raise ValueError("OCR rate and usage limits must be positive")
         return value
+
+    @field_validator(
+        "document_max_upload_bytes",
+        "document_max_pages",
+        "document_max_characters",
+        "document_max_segment_characters",
+    )
+    @classmethod
+    def require_positive_document_limits(cls, value: int) -> int:
+        if value <= 0:
+            raise ValueError("Document limits must be positive")
+        return value
+
+    @field_validator(
+        "document_job_expiration_hours",
+        "document_job_max_attempts",
+        "document_job_rate_limit_requests",
+        "document_job_time_limit_seconds",
+    )
+    @classmethod
+    def require_positive_job_limits(cls, value: int) -> int:
+        if value <= 0:
+            raise ValueError("Document job limits must be positive")
+        return value
+
+    @model_validator(mode="after")
+    def validate_guest_document_mode(self) -> "Settings":
+        if self.document_guest_mode_enabled and self.app_env.lower() != "development":
+            raise ValueError("DOCUMENT_GUEST_MODE_ENABLED is allowed only in development")
+        if self.document_guest_mode_enabled and not self.document_guest_capability_token:
+            raise ValueError("DOCUMENT_GUEST_CAPABILITY_TOKEN is required for guest mode")
+        if self.document_jobs_enabled and not self.redis_url:
+            raise ValueError("REDIS_URL is required when document jobs are enabled")
+        return self
 
 
 @lru_cache

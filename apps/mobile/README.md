@@ -1,4 +1,4 @@
-# Lingua Mobile — Phase 3E
+# Lingua Mobile — Phase 4D
 
 Flutter/Dart mobile client for the FastAPI service. The app uses Riverpod for state, GoRouter for navigation, Dio for HTTP, Material 3, SharedPreferences for explicit local saves, a shared blue-white design system, and a small dependency-free EN/MM localization layer.
 
@@ -23,9 +23,20 @@ flutter run --dart-define=API_BASE_URL=http://localhost:8000
 
 For older macOS/Xcode installations, use a Flutter SDK compatible with the installed Xcode and iOS deployment target. If CocoaPods reports a deployment-target or architecture issue, update the Podfile target only to the maximum supported by that Xcode, run `pod repo update`/`pod install`, and avoid upgrading Xcode-dependent packages blindly. Device signing, simulator builds, and native platform files were not verifiable in this environment because Flutter/Dart are not installed.
 
+## Phase 4D camera and OCR
+
+Camera and gallery capture are explicit user actions. The selected image is copied into the app temporary directory, checked against the 8 MB/20 MP and JPEG/PNG/WebP limits, and removed after the session. Gallery originals are never deleted. OCR is not called until the user presses Scan text; extracted text is editable and translation is a separate user-confirmed action. Bounding boxes are rendered when the API returns them. Crop and rotation are applied to a temporary upload copy only.
+
+Add the native permissions required by the plugins when platform folders are generated:
+
+- Android: `android.permission.CAMERA` in the application manifest. `image_picker` handles the gallery flow; review Android 13+ media permission behavior for the target SDK.
+- iOS: `NSCameraUsageDescription` and `NSPhotoLibraryUsageDescription` in `Info.plist`.
+
+The app does not store images, OCR text, or cloud credentials. Camera resources are disposed when capture ends, the route is removed, or the app is backgrounded. Export uses the platform file picker and only writes after the user selects a destination.
+
 ## Phase 3 scope
 
-Text translation, voice recording, real speech-to-text, editable Myanmar Unicode transcripts, Phase 2 text translation, Azure-backed TTS playback, language/voice selectors, loading/error/retry states, theme switching, and EN/MM switching are implemented. Camera, OCR, Documents, auth, and provider keys remain outside the app. Recording begins only after explicit user action and stops on cancel, lifecycle changes, unmount, or 15 seconds. Temporary recording and playback files are deleted and are never added to local history.
+Text translation, voice recording, real speech-to-text, editable Myanmar Unicode transcripts, Phase 2 text translation, Azure-backed TTS playback, language/voice selectors, loading/error/retry states, theme switching, and EN/MM switching are implemented. Documents, auth, and provider keys remain outside the app. Recording begins only after explicit user action and stops on cancel, lifecycle changes, unmount, or 15 seconds. Temporary recording and playback files are deleted and are never added to local history.
 
 The existing Phase 3B FastAPI contract accepts bounded raw audio bytes with an `audio/*` content type and `locale` query parameter. The mobile client sends the selected recording bytes directly to that contract; it does not fabricate multipart fields that the current backend does not accept.
 

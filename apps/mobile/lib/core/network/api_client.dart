@@ -1,5 +1,8 @@
 import 'package:dio/dio.dart';
+import 'package:http_parser/http_parser.dart';
+import 'package:path/path.dart' as path;
 
+import '../models/ocr.dart';
 import '../models/speech.dart';
 import '../models/translation.dart';
 
@@ -37,6 +40,22 @@ class ApiClient {
   Future<SpeechCapabilities> getSpeechCapabilities() async {
     final raw = await _request<Map<String, dynamic>>(() => _dio.get<Map<String, dynamic>>('/api/v1/speech/capabilities'));
     return SpeechCapabilities.fromJson(raw);
+  }
+
+  Future<OcrCapabilities> getOcrCapabilities() async {
+    final raw = await _request<Map<String, dynamic>>(() => _dio.get<Map<String, dynamic>>('/api/v1/ocr/capabilities'));
+    return OcrCapabilities.fromJson(raw);
+  }
+
+  Future<OcrResponse> extractOcr({required String imagePath, required String language, bool cloudConsent = false, CancelToken? cancelToken}) async {
+    final extension = path.extension(imagePath).toLowerCase();
+    final subtype = extension == '.png' ? 'png' : extension == '.webp' ? 'webp' : 'jpeg';
+    final form = FormData.fromMap({
+      'image': await MultipartFile.fromFile(imagePath, filename: path.basename(imagePath), contentType: MediaType('image', subtype)),
+      'cloud_consent': cloudConsent.toString(),
+    });
+    final raw = await _request<Map<String, dynamic>>(() => _dio.post<Map<String, dynamic>>('/api/v1/ocr/extract?language=${Uri.encodeQueryComponent(language)}', data: form, cancelToken: cancelToken, options: Options(contentType: 'multipart/form-data')));
+    return OcrResponse.fromJson(raw);
   }
 
   Future<TranslationResponse> translateText({required String? sourceLanguage, required String targetLanguage, required String text}) async {

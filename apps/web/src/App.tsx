@@ -34,6 +34,7 @@ import { usePreferences } from "./store";
 import type { Language } from "./types";
 import VoicePage from "./VoicePage";
 import ConversationPage from "./ConversationPage";
+import CameraPage from "./CameraPage";
 
 const MAX_CHARACTERS = 5000;
 const navItems: { to: string; label: string; icon: LucideIcon }[] = [
@@ -63,7 +64,7 @@ function App() {
             <Route path="/translate" element={<TranslatorPage />} />
             <Route path="/voice" element={<VoicePage />} />
             <Route path="/conversation" element={<ConversationPage />} />
-            <Route path="/camera" element={<UnavailablePage type="camera" icon={Camera} />} />
+            <Route path="/camera" element={<CameraPage />} />
             <Route path="/documents" element={<UnavailablePage type="documents" icon={FileText} />} />
             <Route path="/history" element={<CollectionPage type="history" />} />
             <Route path="/favorites" element={<CollectionPage type="favorites" />} />

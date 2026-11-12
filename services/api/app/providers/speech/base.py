@@ -56,9 +56,7 @@ class SpeechRecognitionProvider(ABC):
     capabilities: tuple[SpeechLanguageCapability, ...]
 
     @abstractmethod
-    async def recognize(
-        self, *, audio_data: bytes, locale: str
-    ) -> SpeechRecognitionResult:
+    async def recognize(self, *, audio_data: bytes, locale: str) -> SpeechRecognitionResult:
         raise NotImplementedError
 
 

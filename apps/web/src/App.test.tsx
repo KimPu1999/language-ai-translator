@@ -8,7 +8,7 @@ import App from "./App";
 import { api } from "./api";
 import "./i18n";
 
-vi.mock("./api", () => ({ api: { getLanguages: vi.fn(), getCapabilities: vi.fn(), getSpeechCapabilities: vi.fn(), translateText: vi.fn(), transcribeVoice: vi.fn(), synthesizeVoice: vi.fn() } }));
+vi.mock("./api", () => ({ api: { getLanguages: vi.fn(), getCapabilities: vi.fn(), getSpeechCapabilities: vi.fn(), getOcrCapabilities: vi.fn(), extractOcr: vi.fn(), translateText: vi.fn(), transcribeVoice: vi.fn(), synthesizeVoice: vi.fn() } }));
 
 function renderApp() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });

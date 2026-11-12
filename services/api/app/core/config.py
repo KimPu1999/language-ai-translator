@@ -1,7 +1,7 @@
 from functools import lru_cache
 from urllib.parse import urlparse
 
-from pydantic import field_validator, model_validator
+from pydantic import SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -27,6 +27,16 @@ class Settings(BaseSettings):
     redis_url: str | None = None
     translation_cache_enabled: bool = False
     translation_cache_ttl_seconds: int = 300
+    ocr_tesseract_command: str = "tesseract"
+    ocr_provider: str = "tesseract"
+    ocr_timeout_seconds: float = 20.0
+    ocr_max_upload_bytes: int = 8 * 1024 * 1024
+    ocr_max_pixels: int = 20_000_000
+    ocr_google_cloud_enabled: bool = False
+    ocr_google_cloud_project_id: str | None = None
+    ocr_google_cloud_credentials_json: SecretStr | None = None
+    ocr_rate_limit_requests: int = 30
+    ocr_rate_limit_bytes: int = 100_000_000
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
@@ -58,12 +68,34 @@ class Settings(BaseSettings):
         stripped = value.strip()
         return stripped or None
 
+    @field_validator("ocr_google_cloud_project_id", mode="before")
+    @classmethod
+    def normalize_optional_cloud_project(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        stripped = value.strip()
+        return stripped or None
+
+    @field_validator("ocr_provider")
+    @classmethod
+    def validate_ocr_provider(cls, value: str) -> str:
+        normalized = value.strip().lower()
+        if normalized not in {"tesseract", "google-cloud-vision"}:
+            raise ValueError("OCR_PROVIDER must be tesseract or google-cloud-vision")
+        return normalized
+
+    @field_validator("ocr_google_cloud_credentials_json", mode="before")
+    @classmethod
+    def normalize_cloud_credentials(cls, value: str | SecretStr | None) -> str | SecretStr | None:
+        if value is None:
+            return None
+        raw = value.get_secret_value() if isinstance(value, SecretStr) else value
+        return raw.strip() or None
+
     @model_validator(mode="after")
     def validate_speech_configuration(self) -> "Settings":
         if bool(self.azure_speech_key) != bool(self.azure_speech_region):
-            raise ValueError(
-                "AZURE_SPEECH_KEY and AZURE_SPEECH_REGION must be configured together"
-            )
+            raise ValueError("AZURE_SPEECH_KEY and AZURE_SPEECH_REGION must be configured together")
         return self
 
     @field_validator("azure_translator_endpoint")
@@ -116,6 +148,27 @@ class Settings(BaseSettings):
     def require_positive_cache_ttl(cls, value: int) -> int:
         if value <= 0:
             raise ValueError("TRANSLATION_CACHE_TTL_SECONDS must be positive")
+        return value
+
+    @field_validator("ocr_timeout_seconds")
+    @classmethod
+    def require_bounded_ocr_timeout(cls, value: float) -> float:
+        if value <= 0 or value > 120:
+            raise ValueError("OCR_TIMEOUT_SECONDS must be between 0 and 120")
+        return value
+
+    @field_validator("ocr_max_upload_bytes", "ocr_max_pixels")
+    @classmethod
+    def require_positive_ocr_limits(cls, value: int) -> int:
+        if value <= 0:
+            raise ValueError("OCR limits must be positive")
+        return value
+
+    @field_validator("ocr_rate_limit_requests", "ocr_rate_limit_bytes")
+    @classmethod
+    def require_positive_ocr_rate_limits(cls, value: int) -> int:
+        if value <= 0:
+            raise ValueError("OCR rate and usage limits must be positive")
         return value
 
 

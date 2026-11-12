@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/language.dart';
+import '../models/ocr.dart';
 import '../models/speech.dart';
 import '../network/api_client.dart';
 
@@ -21,6 +22,10 @@ final capabilitiesProvider = FutureProvider<Capabilities>((ref) async {
 
 final speechCapabilitiesProvider = FutureProvider<SpeechCapabilities>((ref) async {
   return ref.watch(apiClientProvider).getSpeechCapabilities();
+});
+
+final ocrCapabilitiesProvider = FutureProvider<OcrCapabilities>((ref) async {
+  return ref.watch(apiClientProvider).getOcrCapabilities();
 });
 
 final localeProvider = StateProvider<Locale>((ref) => const Locale('en'));

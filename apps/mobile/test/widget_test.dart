@@ -6,13 +6,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lingua_mobile/core/localization/app_strings.dart';
 import 'package:lingua_mobile/core/models/language.dart';
 import 'package:lingua_mobile/core/models/speech.dart';
+import 'package:lingua_mobile/core/models/ocr.dart';
 import 'package:lingua_mobile/core/network/api_client.dart';
 import 'package:lingua_mobile/core/models/translation.dart';
 import 'package:lingua_mobile/core/providers/app_providers.dart';
 import 'package:lingua_mobile/features/text/text_page.dart';
-import 'package:lingua_mobile/widgets/feature_unavailable.dart';
 import 'package:lingua_mobile/features/text/text_controller.dart';
 import 'package:lingua_mobile/features/voice/voice_page.dart';
+import 'package:lingua_mobile/features/camera/camera_page.dart';
 
 class _FakeApiClient extends ApiClient {
   @override
@@ -23,6 +24,9 @@ class _FakeApiClient extends ApiClient {
 
   @override
   Future<Map<String, dynamic>> getCapabilities() async => {'text_translation': false, 'provider_configured': false, 'supported_operations': ['text_translation']};
+
+  @override
+  Future<OcrCapabilities> getOcrCapabilities() async => const OcrCapabilities(provider: 'tesseract', providerConfigured: false, languages: []);
 }
 
 class _TranslationApiClient extends ApiClient {
@@ -76,10 +80,13 @@ void main() {
     expect(copy.onPressed, isNull);
   });
 
-  testWidgets('unsupported camera feature is explicitly unavailable', (tester) async {
-    await tester.pumpWidget(_wrap(const FeatureUnavailable(icon: Icons.camera_alt_outlined, title: 'Camera')));
-    expect(find.text('Unavailable'), findsOneWidget);
-    expect(find.text('Camera is not ready'), findsOneWidget);
+  testWidgets('camera page exposes explicit capture actions and no automatic upload', (tester) async {
+    await tester.pumpWidget(_wrap(const CameraPage()));
+    await tester.pumpAndSettle();
+    expect(find.text('Camera translator'), findsOneWidget);
+    expect(find.text('Use camera'), findsOneWidget);
+    expect(find.text('Choose from gallery'), findsOneWidget);
+    expect(find.text('OCR is not configured. Your image will not be uploaded.'), findsOneWidget);
   });
 
   test('Myanmar localization has readable core labels', () {
@@ -130,6 +137,13 @@ void main() {
     final capabilities = SpeechCapabilities.fromJson({'provider': 'azure', 'provider_configured': true, 'speech_recognition': true, 'speech_synthesis': true, 'languages': [{'text_code': 'my', 'locale': 'my-MM', 'stt_enabled': true, 'tts_enabled': true, 'voices': [{'name': 'my-MM-NilarNeural', 'locale': 'my-MM', 'gender': 'Female'}]}]});
     expect(capabilities.languages.single.locale, 'my-MM');
     expect(capabilities.languages.single.voices.single.name, 'my-MM-NilarNeural');
+  });
+
+  test('OCR response preserves Unicode text and normalized bounding boxes', () {
+    final response = OcrResponse.fromJson({'text': 'မင်္ဂလာပါ', 'language': 'my', 'provider': 'tesseract', 'blocks': [{'text': 'မင်္ဂလာပါ', 'left': .1, 'top': .2, 'width': .5, 'height': .1, 'confidence': .98}]});
+    expect(response.text, 'မင်္ဂလာပါ');
+    expect(response.blocks.single.left, .1);
+    expect(response.blocks.single.confidence, .98);
   });
 }
 

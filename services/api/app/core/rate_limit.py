@@ -56,9 +56,7 @@ class InMemorySpeechRateLimiter:
     ) -> RateLimitDecision:
         now = time.monotonic()
         async with self._lock:
-            start, requests, used_bytes, used_characters = self._buckets.get(
-                key, (now, 0, 0, 0)
-            )
+            start, requests, used_bytes, used_characters = self._buckets.get(key, (now, 0, 0, 0))
             if now - start >= self._window_seconds:
                 start, requests, used_bytes, used_characters = now, 0, 0, 0
             retry_after = max(1, int(self._window_seconds - (now - start)))
@@ -79,8 +77,32 @@ class InMemorySpeechRateLimiter:
             return RateLimitDecision(True)
 
 
+class InMemoryOCRRateLimiter:
+    def __init__(self, settings: Settings):
+        self._request_limit = settings.ocr_rate_limit_requests
+        self._byte_limit = settings.ocr_rate_limit_bytes
+        self._window_seconds = settings.rate_limit_window_seconds
+        self._buckets: dict[str, tuple[float, int, int]] = {}
+        self._lock = asyncio.Lock()
+
+    async def check(self, key: str, *, input_bytes: int) -> RateLimitDecision:
+        now = time.monotonic()
+        async with self._lock:
+            start, requests, used_bytes = self._buckets.get(key, (now, 0, 0))
+            if now - start >= self._window_seconds:
+                start, requests, used_bytes = now, 0, 0
+            retry_after = max(1, int(self._window_seconds - (now - start)))
+            if requests >= self._request_limit:
+                return RateLimitDecision(False, "OCR_RATE_LIMIT_EXCEEDED", retry_after)
+            if used_bytes + input_bytes > self._byte_limit:
+                return RateLimitDecision(False, "OCR_BYTE_USAGE_LIMIT_EXCEEDED", retry_after)
+            self._buckets[key] = (start, requests + 1, used_bytes + input_bytes)
+            return RateLimitDecision(True)
+
+
 _limiter = InMemoryTranslationRateLimiter(get_settings())
 _speech_limiter = InMemorySpeechRateLimiter(get_settings())
+_ocr_limiter = InMemoryOCRRateLimiter(get_settings())
 
 
 def get_translation_rate_limiter() -> InMemoryTranslationRateLimiter:
@@ -89,6 +111,10 @@ def get_translation_rate_limiter() -> InMemoryTranslationRateLimiter:
 
 def get_speech_rate_limiter() -> InMemorySpeechRateLimiter:
     return _speech_limiter
+
+
+def get_ocr_rate_limiter() -> InMemoryOCRRateLimiter:
+    return _ocr_limiter
 
 
 async def enforce_translation_rate_limit(

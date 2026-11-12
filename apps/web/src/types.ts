@@ -47,6 +47,30 @@ export type VoiceTranscriptionResponse = {
   provider: string;
   request_id: string;
 };
+export type OCRBlock = {
+  text: string;
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+  confidence?: number | null;
+};
+
+export type OCRCapabilities = {
+  provider: string | null;
+  provider_configured: boolean;
+  languages: string[];
+  experimental_languages?: string[];
+  consent_required?: boolean;
+};
+
+export type OCRResponse = {
+  text: string;
+  language: string;
+  provider: string;
+  blocks: OCRBlock[];
+  request_id: string;
+};
 export type ApiError = {
   error?: { code?: string; message?: string; request_id?: string };
 };

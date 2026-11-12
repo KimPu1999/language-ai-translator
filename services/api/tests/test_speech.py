@@ -145,9 +145,7 @@ async def test_speech_capabilities_do_not_expose_credentials(monkeypatch):
     registry = SpeechProviderRegistry(recognition=None, synthesis=None)
     app.dependency_overrides[get_speech_registry] = lambda: registry
     try:
-        async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test"
-        ) as client:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.get("/api/v1/speech/capabilities")
         assert response.status_code == 200
         body = response.json()

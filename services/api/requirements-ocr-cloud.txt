@@ -1,0 +1,2 @@
+# Optional Phase 4E provider; install only when OCR_PROVIDER=google-cloud-vision.
+google-cloud-vision>=3.7,<4

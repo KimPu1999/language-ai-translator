@@ -77,6 +77,33 @@ class AppStrings {
   String get conversationEnd => isMyanmar ? 'စကားပြောမှု ပိတ်ရန်' : 'End conversation';
   String get conversationClear => isMyanmar ? 'ဆက်ရှင်ရှင်းရန်' : 'Clear session';
   String get conversationEnded => isMyanmar ? 'စကားပြောမှု ပိတ်ပြီးပါပြီ။ အသစ်စရန် ဆက်ရှင်ကို ရှင်းပါ။' : 'Conversation ended. Clear the session to start again.';
+  String get cameraTitle => isMyanmar ? 'ပုံမှ စာသား' : 'Camera translator';
+  String get cameraBody => isMyanmar ? 'ပုံထဲမှ စာသားကို ဖတ်ပြီး စစ်ဆေးကာ ဘာသာပြန်ပါ။' : 'Capture or choose an image, review the extracted text, then translate it.';
+  String get uploadImage => isMyanmar ? 'ပုံတင်ရန်' : 'Upload image';
+  String get useCamera => isMyanmar ? 'ကင်မရာအသုံးပြုရန်' : 'Use camera';
+  String get chooseFromGallery => isMyanmar ? 'Gallery မှ ရွေးရန်' : 'Choose from gallery';
+  String get takePhoto => isMyanmar ? 'ဓာတ်ပုံရိုက်ရန်' : 'Take photo';
+  String get cameraPermissionDenied => isMyanmar ? 'ကင်မရာခွင့်ပြုချက် မရပါ။' : 'Camera permission was denied.';
+  String get cameraUnavailable => isMyanmar ? 'ကင်မရာကို အသုံးပြု၍ မရပါ။' : 'Camera is unavailable.';
+  String get cameraCapabilitiesError => isMyanmar ? 'OCR လုပ်ဆောင်ချက်များကို ရယူ၍ မရပါ။' : 'OCR capabilities could not be loaded.';
+  String get ocrProviderUnavailable => isMyanmar ? 'OCR စနစ်ကို မသတ်မှတ်ရသေးပါ။ ပုံကို တင်မည်မဟုတ်ပါ။' : 'OCR is not configured. Your image will not be uploaded.';
+  String get ocrCloudConsent => isMyanmar ? 'ဤ OCR ဝန်ဆောင်မှုသည် ပုံကို cloud တွင် လုပ်ဆောင်မည်။ ပုံပေးပို့ရန် သဘောတူပါသည်။' : 'This OCR provider will process your image in the cloud. I consent to sending this image.';
+  String get ocrLanguage => isMyanmar ? 'OCR ဘာသာစကား' : 'OCR language';
+  String get scanText => isMyanmar ? 'စာသားဖတ်ရန်' : 'Scan text';
+  String get scanning => isMyanmar ? 'စာသားဖတ်နေသည်…' : 'Scanning image…';
+  String get imagePreview => isMyanmar ? 'ပုံအကြိုကြည့်ရန်' : 'Image preview';
+  String get removeImage => isMyanmar ? 'ပုံဖယ်ရန်' : 'Remove image';
+  String get rotate => isMyanmar ? 'လှည့်ရန်' : 'Rotate';
+  String get crop => isMyanmar ? 'ဖြတ်ညှိရန်' : 'Crop';
+  String get extractedText => isMyanmar ? 'ဖတ်ထုတ်ထားသော စာသား' : 'Extracted text';
+  String get reviewText => isMyanmar ? 'စာသားကို စစ်ဆေးပြီးနောက် ဘာသာပြန်ပါ။' : 'Review and correct the text before translating.';
+  String get translateReviewed => isMyanmar ? 'စစ်ဆေးပြီး ဘာသာပြန်ရန်' : 'Translate reviewed text';
+  String get exportTxt => isMyanmar ? 'TXT သိမ်းရန်' : 'Export TXT';
+  String get fileExportError => isMyanmar ? 'ဖိုင်သိမ်း၍ မရပါ။' : 'The text file could not be saved.';
+  String get imageTooLarge => isMyanmar ? 'ပုံသည် အလွန်ကြီးပါသည်။' : 'Image is too large.';
+  String get unsupportedImage => isMyanmar ? 'JPEG၊ PNG သို့မဟုတ် WebP ပုံကို အသုံးပြုပါ။' : 'Use a JPEG, PNG, or WebP image.';
+  String get ocrFailed => isMyanmar ? 'ပုံမှ စာသားဖတ်၍ မရပါ။' : 'Text could not be extracted from this image.';
+  String get cameraClear => isMyanmar ? 'ဆက်ရှင်ရှင်းရန်' : 'Clear session';
 }
 
 class AppStringsDelegate extends LocalizationsDelegate<AppStrings> {

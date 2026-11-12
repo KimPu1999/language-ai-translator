@@ -1,4 +1,4 @@
-# Lingua AI Translator — Phase 3A
+# Lingua AI Translator — Phase 4A
 
 Phase 3A adds the Azure Speech provider foundation on top of the Phase 2 translation reliability controls. Speech recognition and synthesis use injectable interfaces, locale-aware capability metadata, server-only credentials, and bounded thread-offloaded SDK calls. No speech capture or upload product flow is enabled in this phase.
 
@@ -19,6 +19,10 @@ Phase 3B adds `POST /api/v1/voice/transcribe` for bounded raw audio requests and
 Phase 2A also exposes `POST /api/v1/translations/detect`. Azure configuration and response/error behavior are documented in [docs/phase-2a.md](docs/phase-2a.md). Phase 2B details are in [docs/phase-2b.md](docs/phase-2b.md).
 
 Speech configuration and locale mappings are documented in [docs/phase-3a.md](docs/phase-3a.md).
+
+Phase 4A/4B adds `GET /api/v1/ocr/capabilities` and multipart `POST /api/v1/ocr/extract?language=<code>`. OCR accepts JPEG, PNG, and WebP up to 8 MB and 20 MP, validates signatures, strips EXIF metadata after orientation, returns Unicode text and normalized bounding boxes, enforces OCR quotas, and retains no images. Tesseract capabilities are limited to language packs actually installed on the API host. See [docs/phase-4a.md](docs/phase-4a.md) and [docs/phase-4b.md](docs/phase-4b.md).
+
+Phase 4E adds an optional Google Cloud Vision adapter. Tesseract remains the default; Google is selected only with explicit server configuration and per-request cloud consent. Burmese support is experimental, and cloud usage records billable metadata only.
 
 ## Current scope
 

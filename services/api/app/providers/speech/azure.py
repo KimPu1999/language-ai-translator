@@ -74,9 +74,7 @@ class _AzureSpeechProvider:
     def _provider_error(result: Any, *, default_message: str) -> SpeechProviderError:
         details = getattr(getattr(result, "cancellation_details", None), "error_details", None)
         del details  # SDK details may contain sensitive service information.
-        return SpeechProviderError(
-            "SPEECH_PROVIDER_ERROR", default_message, status_code=502
-        )
+        return SpeechProviderError("SPEECH_PROVIDER_ERROR", default_message, status_code=502)
 
 
 class AzureSpeechRecognitionProvider(_AzureSpeechProvider, SpeechRecognitionProvider):

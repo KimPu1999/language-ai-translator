@@ -1,4 +1,4 @@
-# Lingua Web — Phase 3E
+# Lingua Web — Phase 4C
 
 React + TypeScript + Vite web client for the FastAPI translation service. It uses Tailwind CSS, Lucide icons, React Router, TanStack Query, Zustand, i18next, Vitest, and Testing Library.
 
@@ -23,7 +23,11 @@ npm run build
 npm test
 ```
 
-Voice recording begins only after an explicit user action, is capped at 15 seconds, and is cleaned up on stop, cancel, navigation, and unmount. Audio and transcripts are not saved automatically. Camera and Documents remain clearly unavailable, and no unauthorized personal history API is used.
+Voice recording begins only after an explicit user action, is capped at 15 seconds, and is cleaned up on stop, cancel, navigation, and unmount. Audio and transcripts are not saved automatically. Camera OCR is available through the FastAPI OCR endpoints; Documents remains clearly unavailable, and no unauthorized personal history API is used.
+
+## Camera/image translation
+
+The `/camera` route accepts JPEG, PNG, and WebP uploads or explicit browser camera capture. It validates size and decoded dimensions client-side, supports crop/rotate controls, revokes temporary preview URLs, and stops camera tracks after capture or navigation. OCR capabilities and results come from FastAPI only. Extracted text is editable and must be explicitly reviewed before a separate Phase 2 translation request. Images are never saved automatically, and OCR/translation errors remain separate and retryable.
 
 ## Two-way conversation
 

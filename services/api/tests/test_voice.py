@@ -51,8 +51,8 @@ class FakeDb:
 
 def override_dependencies(registry, limiter=None, db=None):
     app.dependency_overrides[get_speech_registry] = lambda: registry
-    app.dependency_overrides[get_speech_rate_limiter] = (
-        lambda: limiter or InMemorySpeechRateLimiter(Settings())
+    app.dependency_overrides[get_speech_rate_limiter] = lambda: (
+        limiter or InMemorySpeechRateLimiter(Settings())
     )
     app.dependency_overrides[get_db] = lambda: db or FakeDb()
 

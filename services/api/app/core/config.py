@@ -60,7 +60,7 @@ class Settings(BaseSettings):
     auth_csrf_cookie_name: str = "lingua_csrf"
     auth_cookie_secure: bool = False
     auth_public_base_url: str = "http://localhost:5173"
-    auth_password_min_length: int = 12
+    auth_password_min_length: int = 8
     auth_login_rate_limit_attempts: int = 5
     auth_action_rate_limit_attempts: int = 10
     auth_rate_limit_window_seconds: int = 300
@@ -255,8 +255,8 @@ class Settings(BaseSettings):
     @field_validator("auth_password_min_length")
     @classmethod
     def require_secure_password_length(cls, value: int) -> int:
-        if value < 12:
-            raise ValueError("AUTH_PASSWORD_MIN_LENGTH must be at least 12")
+        if not 8 <= value <= 12:
+            raise ValueError("AUTH_PASSWORD_MIN_LENGTH must be between 8 and 12")
         return value
 
     @field_validator(
@@ -308,6 +308,10 @@ class Settings(BaseSettings):
                 raise ValueError("AUTH_COOKIE_SECURE must be true in production")
             if not self.auth_public_base_url.startswith("https://"):
                 raise ValueError("AUTH_PUBLIC_BASE_URL must use HTTPS in production")
+            if not self.redis_url:
+                raise ValueError(
+                    "REDIS_URL is required in production for distributed rate limiting"
+                )
         return self
 
     @model_validator(mode="after")

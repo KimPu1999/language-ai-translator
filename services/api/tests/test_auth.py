@@ -105,7 +105,7 @@ async def test_registration_hashes_password_and_sends_verification_without_signi
                 "/api/v1/auth/register",
                 json={
                     "email": "User@Example.com",
-                    "password": "CorrectHorse9!",
+                    "password": "Correct9!A",
                     "client": "web",
                 },
             )
@@ -115,8 +115,8 @@ async def test_registration_hashes_password_and_sends_verification_without_signi
         user = next(value for value in session.added if isinstance(value, User))
         assert user.email == "user@example.com"
         assert user.password_hash and user.password_hash.startswith("$argon2")
-        assert PASSWORD_HASHER.verify("CorrectHorse9!", user.password_hash)
-        assert "CorrectHorse9!" not in user.password_hash
+        assert PASSWORD_HASHER.verify("Correct9!A", user.password_hash)
+        assert "Correct9!A" not in user.password_hash
         assert len(mail.messages) == 1
         assert "token=" in mail.messages[0].body
         action = next(value for value in session.added if isinstance(value, AuthActionToken))
@@ -135,7 +135,7 @@ async def test_duplicate_registration_returns_generic_conflict(auth_settings):
         await AuthService(
             session, settings=auth_settings, email_provider=MemoryEmailProvider()
         ).register(
-            RegisterRequest(email="USER@example.com", password="CorrectHorse9!"),
+            RegisterRequest(email="USER@example.com", password="Correct9!A"),
             Request(
                 {
                     "type": "http",
@@ -158,7 +158,7 @@ async def test_login_transport_controls_token_delivery(auth_settings):
     user = User(
         id=uuid4(),
         email="user@example.com",
-        password_hash=PASSWORD_HASHER.hash("CorrectHorse9!"),
+        password_hash=PASSWORD_HASHER.hash("Correct9!A"),
         email_verified_at=datetime.now(UTC),
         is_active=True,
         created_at=datetime.now(UTC),
@@ -178,7 +178,7 @@ async def test_login_transport_controls_token_delivery(auth_settings):
     mobile = await AuthService(
         FakeAuthSession(scalar_values=[user]), settings=auth_settings
     ).login(
-        LoginRequest(email="user@example.com", password="CorrectHorse9!", client="mobile"),
+        LoginRequest(email="user@example.com", password="Correct9!A", client="mobile"),
         request,
     )
     assert mobile.access_token and mobile.token_type == "Bearer"
@@ -188,7 +188,7 @@ async def test_login_transport_controls_token_delivery(auth_settings):
     web = await AuthService(
         FakeAuthSession(scalar_values=[user]), settings=auth_settings
     ).login(
-        LoginRequest(email="user@example.com", password="CorrectHorse9!", client="web"),
+        LoginRequest(email="user@example.com", password="Correct9!A", client="web"),
         request,
     )
     assert web.access_token is None
@@ -205,10 +205,19 @@ def test_email_normalization_and_opaque_token_hashing():
 def test_password_strength_rejects_weak_values():
     from pydantic import ValidationError
 
-    from app.schemas.auth import LoginRequest
+    from app.schemas.auth import RegisterRequest
 
     with pytest.raises(ValidationError):
-        LoginRequest(email="user@example.com", password="weak")
+        RegisterRequest(email="user@example.com", password="weak")
+
+
+def test_password_policy_allows_eight_to_twelve_characters_only():
+    from pydantic import ValidationError
+
+    RegisterRequest(email="user@example.com", password="aB3!xxxx")
+    RegisterRequest(email="user@example.com", password="aB3!xxxxxxxx")
+    with pytest.raises(ValidationError):
+        RegisterRequest(email="user@example.com", password="aB3!xxxxxxxxx")
 
 
 def test_auth_migration_adds_legacy_safe_user_columns_and_token_tables():
@@ -238,7 +247,7 @@ async def test_invalid_login_uses_generic_error(monkeypatch, auth_settings):
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post(
                 "/api/v1/auth/login",
-                json={"email": "missing@example.com", "password": "CorrectHorse9!"},
+                json={"email": "missing@example.com", "password": "Correct9!A"},
             )
         assert response.status_code == 401
         assert response.json()["error"]["code"] == "INVALID_CREDENTIALS"
@@ -273,10 +282,10 @@ async def test_password_reset_consumes_token_and_revokes_sessions(auth_settings)
     )
     session = FakeAuthSession(scalar_values=[action], user=user)
     await AuthService(session, settings=auth_settings).reset_password(
-        raw_token, "NewPassword9!"
+        raw_token, "New9!Pass"
     )
     assert action.used_at is not None
-    assert PASSWORD_HASHER.verify("NewPassword9!", user.password_hash)
+    assert PASSWORD_HASHER.verify("New9!Pass", user.password_hash)
     assert not PASSWORD_HASHER.verify("OldPassword9!", user.password_hash)
 
 

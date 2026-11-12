@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { NavLink, Route, Routes, useNavigate } from "react-router-dom";
+import { NavLink, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   ArrowLeftRight,
@@ -15,6 +15,7 @@ import {
   History,
   Home,
   Languages,
+  LayoutDashboard,
   Menu,
   MessageCircle,
   Mic,
@@ -30,12 +31,14 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { api } from "./api";
 import i18n from "./i18n";
-import { usePreferences } from "./store";
-import type { Language } from "./types";
+import { useAuth, usePreferences } from "./store";
+import type { AuthUser, Language } from "./types";
 import VoicePage from "./VoicePage";
 import ConversationPage from "./ConversationPage";
 import CameraPage from "./CameraPage";
 import DocumentPage from "./DocumentPage";
+import { AccountDeletionPage, DashboardPage, PrivacySettingsPage, ProfilePage, ProtectedRoute, SecurityPage, ServerFavoritesPage, ServerHistoryPage } from "./AccountPages";
+import { ForgotPasswordPage, RegisterPage, ResetPasswordPage, SignInPage, VerifyEmailPage } from "./AuthPages";
 
 const MAX_CHARACTERS = 5000;
 const navItems: { to: string; label: string; icon: LucideIcon }[] = [
@@ -47,13 +50,32 @@ const navItems: { to: string; label: string; icon: LucideIcon }[] = [
   { to: "/documents", label: "Documents", icon: FileText },
   { to: "/history", label: "History", icon: History },
   { to: "/favorites", label: "Favorites", icon: Heart },
+  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
 ];
 
 function App() {
-  const { theme, toggleTheme, uiLanguage, setUiLanguage } = usePreferences();
+  const { theme, toggleTheme, uiLanguage, setUiLanguage, clearLocalLibrary } = usePreferences();
+  const { setUser, clearUser, setChecked } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   useEffect(() => { document.documentElement.classList.toggle("dark", theme === "dark"); }, [theme]);
   useEffect(() => { void i18n.changeLanguage(uiLanguage); }, [uiLanguage]);
+  useEffect(() => {
+    const getCurrentUser = (api as { getCurrentUser?: () => Promise<AuthUser> }).getCurrentUser;
+    if (typeof getCurrentUser !== "function") { setChecked(true); return; }
+    let active = true;
+    void getCurrentUser().then((user) => { if (active) setUser(user); }).catch(() => { if (active) { if (!useAuth.getState().user) clearUser(); else setChecked(true); } });
+    return () => { active = false; };
+  }, [clearUser, setChecked, setUser]);
+  useEffect(() => {
+    const expire = () => { clearLocalLibrary(); clearUser(); navigate("/auth/sign-in", { replace: true }); };
+    window.addEventListener("lingua:auth-expired", expire);
+    return () => window.removeEventListener("lingua:auth-expired", expire);
+  }, [clearLocalLibrary, clearUser, navigate]);
+  if (location.pathname.startsWith("/auth/")) {
+    return <Routes><Route path="/auth/sign-in" element={<SignInPage />} /><Route path="/auth/register" element={<RegisterPage />} /><Route path="/auth/verify-email" element={<VerifyEmailPage />} /><Route path="/auth/forgot-password" element={<ForgotPasswordPage />} /><Route path="/auth/reset-password" element={<ResetPasswordPage />} /></Routes>;
+  }
   return (
     <div className="min-h-screen bg-mist transition-colors dark:bg-[#0d1728]">
       <Header onMenu={() => setMobileOpen(true)} theme={theme} toggleTheme={toggleTheme} uiLanguage={uiLanguage} setUiLanguage={setUiLanguage} />
@@ -67,8 +89,13 @@ function App() {
             <Route path="/conversation" element={<ConversationPage />} />
             <Route path="/camera" element={<CameraPage />} />
             <Route path="/documents" element={<DocumentPage />} />
-            <Route path="/history" element={<CollectionPage type="history" />} />
-            <Route path="/favorites" element={<CollectionPage type="favorites" />} />
+            <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+            <Route path="/security" element={<ProtectedRoute><SecurityPage /></ProtectedRoute>} />
+            <Route path="/privacy" element={<ProtectedRoute><PrivacySettingsPage /></ProtectedRoute>} />
+            <Route path="/account/delete" element={<ProtectedRoute><AccountDeletionPage /></ProtectedRoute>} />
+            <Route path="/history" element={<ProtectedRoute><ServerHistoryPage /></ProtectedRoute>} />
+            <Route path="/favorites" element={<ProtectedRoute><ServerFavoritesPage /></ProtectedRoute>} />
             <Route path="/settings" element={<SettingsPage />} />
           </Routes>
         </main>
@@ -82,11 +109,12 @@ function App() {
 function Header({ onMenu, theme, toggleTheme, uiLanguage, setUiLanguage }: { onMenu: () => void; theme: "light" | "dark"; toggleTheme: () => void; uiLanguage: "en" | "mm"; setUiLanguage: (language: "en" | "mm") => void }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const nextLanguage = uiLanguage === "en" ? "mm" : "en";
   return <header className="surface sticky top-0 z-30 border-b border-slate-200/80 bg-white/85 backdrop-blur dark:bg-[#101d31]/90">
     <div className="mx-auto flex h-[72px] max-w-[1440px] items-center justify-between px-4 sm:px-8 lg:px-12">
       <div className="flex items-center gap-3"><button aria-label="Open navigation" className="rounded-xl p-2 lg:hidden" onClick={onMenu}><Menu size={21} /></button><button className="flex items-center gap-2" onClick={() => navigate("/")}><span className="grid h-9 w-9 place-items-center rounded-xl bg-navy text-white shadow-lg shadow-blue-900/15"><Sparkles size={18} /></span><span className="text-lg font-extrabold tracking-tight">{t("appName")}</span></button></div>
-      <div className="flex items-center gap-1"><button aria-label="Toggle dark mode" className="rounded-xl p-2.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800" onClick={toggleTheme}>{theme === "light" ? <Moon size={18} /> : <Sun size={18} />}</button><button aria-label="Switch interface language" className="rounded-xl px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800" onClick={() => { setUiLanguage(nextLanguage); void i18n.changeLanguage(nextLanguage); }}>{uiLanguage === "en" ? "EN" : "MM"}</button><button className="rounded-xl p-2.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800" aria-label="Settings" onClick={() => navigate("/settings")}><SettingsIcon size={19} /></button><div className="hidden h-8 w-8 place-items-center rounded-full bg-sky font-bold text-navy sm:grid">L</div></div>
+      <div className="flex items-center gap-1"><button aria-label="Toggle dark mode" className="rounded-xl p-2.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800" onClick={toggleTheme}>{theme === "light" ? <Moon size={18} /> : <Sun size={18} />}</button><button aria-label="Switch interface language" className="rounded-xl px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800" onClick={() => { setUiLanguage(nextLanguage); void i18n.changeLanguage(nextLanguage); }}>{uiLanguage === "en" ? "EN" : "MM"}</button><button className="rounded-xl p-2.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800" aria-label="Settings" onClick={() => navigate("/settings")}><SettingsIcon size={19} /></button><button aria-label={user ? t("profile") : t("signIn")} onClick={() => navigate(user ? "/dashboard" : "/auth/sign-in")} className="hidden h-8 w-8 place-items-center rounded-full bg-sky font-bold text-navy sm:grid">{user?.email?.slice(0, 1).toUpperCase() ?? "L"}</button></div>
     </div>
   </header>;
 }
@@ -134,8 +162,6 @@ function EmptyOutput() { const { t } = useTranslation(); return <div className="
 function LoadingState() { const { t } = useTranslation(); return <div className="grid flex-1 place-items-center"><div className="text-center"><div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-blue-100 border-t-blue-600" /><p className="subtle text-sm">{t("translating")}</p></div></div>; }
 function ErrorState({ error, onRetry }: { error: Error; onRetry: () => void }) { const { t } = useTranslation(); return <div role="alert" className="flex flex-1 items-center"><div className="w-full rounded-2xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/50 dark:bg-amber-950/30"><p className="text-sm font-bold text-amber-900 dark:text-amber-100">{t("providerUnavailable")}</p><p className="mt-1 text-sm leading-6 text-amber-800 dark:text-amber-200">{error.message}. {t("noInventedResult")}</p><button onClick={onRetry} className="mt-3 inline-flex items-center gap-2 rounded-lg bg-amber-900 px-3 py-2 text-xs font-bold text-white hover:bg-amber-800"><RotateCcw size={13} />{t("retry")}</button></div></div>; }
 function Notice({ title, copy, tone }: { title: string; copy: string; tone: "warning" | "info" }) { return <div className={`mb-5 rounded-2xl border p-4 ${tone === "warning" ? "border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100" : "border-blue-100 bg-blue-50 text-blue-900 dark:border-blue-900/50 dark:bg-blue-950/30 dark:text-blue-100"}`}><p className="text-sm font-bold">{title}</p><p className="mt-1 text-sm">{copy}</p></div>; }
-
-function CollectionPage({ type }: { type: "history" | "favorites" }) { const { t } = useTranslation(); const { localLibraryOptIn, history, favorites } = usePreferences(); const items = type === "history" ? history : favorites; const title = type === "history" ? t("history") : t("favorites"); return <div className="mx-auto max-w-4xl"><PageIntro eyebrow={title.toUpperCase()} title={title} copy={t("localLibraryCopy")} />{!localLibraryOptIn ? <div className="surface grid min-h-[360px] place-items-center rounded-3xl border border-slate-200 bg-white p-8 text-center dark:border-slate-700 dark:bg-[#13233b]"><div><div className="mx-auto mb-5 grid h-16 w-16 place-items-center rounded-2xl bg-sky text-blue-600"><History size={27} /></div><h2 className="text-xl font-bold">{t("localSavingOff")}</h2><p className="subtle mx-auto mt-2 max-w-md text-sm leading-6">{t("localSavingOffCopy")}</p></div></div> : items.length === 0 ? <div className="surface grid min-h-[360px] place-items-center rounded-3xl border border-slate-200 bg-white p-8 text-center dark:border-slate-700 dark:bg-[#13233b]"><div><Heart className="mx-auto mb-5 text-blue-500" size={30} /><h2 className="text-xl font-bold">{type === "history" ? t("noHistory") : t("noFavorites")}</h2></div></div> : <div className="space-y-3">{items.map((item) => <article key={item.id} className="surface rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-[#13233b]"><div className="mb-3 flex justify-between text-xs font-bold uppercase tracking-wider text-slate-400"><span>{item.sourceLanguage} → {item.targetLanguage}</span><span>{new Date(item.createdAt).toLocaleDateString()}</span></div><p className="text-sm text-slate-500">{item.sourceText}</p><p className="mt-3 font-semibold">{item.translatedText}</p></article>)}</div>}</div>; }
 
 function SettingsPage() { const { t, i18n } = useTranslation(); const { theme, toggleTheme, uiLanguage, setUiLanguage, localLibraryOptIn, setLocalLibraryOptIn } = usePreferences(); return <div className="mx-auto max-w-3xl"><PageIntro eyebrow="PREFERENCES" title={t("settings")} copy="Make Lingua feel like yours. These preferences are stored locally in this browser." /><div className="surface divide-y divide-slate-100 rounded-2xl border border-slate-200 bg-white dark:divide-slate-700 dark:border-slate-700 dark:bg-[#13233b]"><SettingRow title={t("appearance")} copy={t("darkMode")}><button aria-label="Toggle dark mode" onClick={toggleTheme} className={`relative h-7 w-12 rounded-full p-1 transition ${theme === "dark" ? "bg-blue-600" : "bg-slate-200"}`}><span className={`block h-5 w-5 rounded-full bg-white shadow transition ${theme === "dark" ? "translate-x-5" : ""}`} /></button></SettingRow><SettingRow title={t("interface")} copy={t("language")}><select value={uiLanguage} onChange={(event) => { const next = event.target.value as "en" | "mm"; setUiLanguage(next); void i18n.changeLanguage(next); }} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-[#101d31]"><option value="en">{t("english")}</option><option value="mm">{t("myanmar")}</option></select></SettingRow><SettingRow title={t("localSaving")} copy={t("localSavingSettingCopy")}><button role="switch" aria-checked={localLibraryOptIn} aria-label={t("localSaving")} onClick={() => setLocalLibraryOptIn(!localLibraryOptIn)} className={`relative h-7 w-12 rounded-full p-1 transition ${localLibraryOptIn ? "bg-blue-600" : "bg-slate-200"}`}><span className={`block h-5 w-5 rounded-full bg-white shadow transition ${localLibraryOptIn ? "translate-x-5" : ""}`} /></button></SettingRow></div></div>; }
 function SettingRow({ title, copy, children }: { title: string; copy: string; children: ReactNode }) { return <div className="flex items-center justify-between gap-4 p-5"><div><p className="font-bold">{title}</p><p className="subtle mt-1 text-sm">{copy}</p></div>{children}</div>; }

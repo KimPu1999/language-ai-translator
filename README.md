@@ -32,6 +32,8 @@ Phase 6A adds first-party email/password authentication with Argon2 passwords, v
 
 Phase 6B adds authenticated profiles, preferences, explicit opt-in private history, favorites, account export/deletion, and session-derived ownership for Phase 5 document jobs. See [docs/phase-6b.md](docs/phase-6b.md).
 
+Phase 6E adds opt-in private synchronization for explicitly selected local translation history, favorites, and preferences between the web and mobile clients. Sync uses authenticated per-user records, stable client IDs, deterministic conflict handling, cursor changes, tombstones, strict payload limits, and a mobile offline retry queue. Audio, images, and documents are never synchronized. See [docs/phase-6e.md](docs/phase-6e.md).
+
 ## Current scope
 
 The repository is organized as `apps/web`, `apps/mobile`, `services/api`, `packages/contracts`, `infra`, and `docs`. History and user records remain protected, source/translated text is not stored by translation requests, and the API refuses non-PostgreSQL URLs.

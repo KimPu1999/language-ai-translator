@@ -6,6 +6,9 @@ import '../models/ocr.dart';
 import '../models/document.dart';
 import '../models/speech.dart';
 import '../models/translation.dart';
+import '../models/auth.dart';
+import '../models/sync.dart';
+import '../security/secure_session_store.dart';
 
 const apiBaseUrl = String.fromEnvironment(
   'API_BASE_URL',
@@ -24,10 +27,160 @@ class ApiFailure implements Exception {
 }
 
 class ApiClient {
-  ApiClient({Dio? dio})
-      : _dio = dio ?? Dio(BaseOptions(baseUrl: apiBaseUrl, connectTimeout: const Duration(seconds: 8), sendTimeout: const Duration(seconds: 8), receiveTimeout: const Duration(seconds: 12)));
+  ApiClient({Dio? dio, SessionStore? sessionStore, this.onSessionExpired})
+      : _dio = dio ?? Dio(BaseOptions(baseUrl: apiBaseUrl, connectTimeout: const Duration(seconds: 8), sendTimeout: const Duration(seconds: 8), receiveTimeout: const Duration(seconds: 12))),
+        _sessionStore = sessionStore ?? SecureSessionStore() {
+    _dio.interceptors.add(InterceptorsWrapper(
+      onRequest: (options, handler) async {
+        if (options.extra['skipAuth'] != true) {
+          String? token;
+          try {
+            token = await _sessionStore.readToken();
+          } catch (_) {
+            // Test hosts without a native keychain/keystore continue as guests.
+          }
+          if (token != null && token.isNotEmpty) {
+            options.headers['Authorization'] = 'Bearer $token';
+            options.extra['authAttached'] = true;
+          }
+        }
+        handler.next(options);
+      },
+      onError: (error, handler) {
+        final status = error.response?.statusCode;
+        if ((status == 401 || status == 403) && error.requestOptions.extra['authAttached'] == true) onSessionExpired?.call();
+        handler.next(error);
+      },
+    ));
+  }
 
   final Dio _dio;
+  final SessionStore _sessionStore;
+  final void Function()? onSessionExpired;
+
+  Future<AuthResponse> login({required String email, required String password, String? deviceName}) async {
+    final raw = await _request<Map<String, dynamic>>(() => _dio.post<Map<String, dynamic>>('/api/v1/auth/login', data: {'email': email, 'password': password, 'client': 'mobile', if (deviceName != null) 'device_name': deviceName}, options: Options(extra: {'skipAuth': true})));
+    return AuthResponse.fromJson(raw);
+  }
+
+  Future<AuthUser> register({required String email, required String password}) async {
+    final raw = await _request<Map<String, dynamic>>(() => _dio.post<Map<String, dynamic>>('/api/v1/auth/register', data: {'email': email, 'password': password, 'client': 'mobile'}, options: Options(extra: {'skipAuth': true})));
+    return AuthUser.fromJson(Map<String, dynamic>.from(raw['user'] as Map));
+  }
+
+  Future<void> verifyEmail(String token) async {
+    await _request<dynamic>(() => _dio.post<dynamic>('/api/v1/auth/verify-email', data: {'token': token}, options: Options(extra: {'skipAuth': true})));
+  }
+
+  Future<void> resendVerification(String email) async {
+    await _request<dynamic>(() => _dio.post<dynamic>('/api/v1/auth/resend-verification', data: {'email': email}, options: Options(extra: {'skipAuth': true})));
+  }
+
+  Future<void> forgotPassword(String email) async {
+    await _request<dynamic>(() => _dio.post<dynamic>('/api/v1/auth/forgot-password', data: {'email': email}, options: Options(extra: {'skipAuth': true})));
+  }
+
+  Future<void> resetPassword({required String token, required String password}) async {
+    await _request<dynamic>(() => _dio.post<dynamic>('/api/v1/auth/reset-password', data: {'token': token, 'password': password}, options: Options(extra: {'skipAuth': true})));
+  }
+
+  Future<AuthUser> getCurrentUser() async {
+    final raw = await _request<Map<String, dynamic>>(() => _dio.get<Map<String, dynamic>>('/api/v1/auth/me'));
+    return AuthUser.fromJson(raw);
+  }
+
+  Future<void> logout() async {
+    await _request<dynamic>(() => _dio.post<dynamic>('/api/v1/auth/logout'));
+  }
+
+  Future<List<AuthSession>> getSessions() async {
+    final raw = await _request<List<dynamic>>(() => _dio.get<List<dynamic>>('/api/v1/auth/sessions'));
+    return raw.map((item) => AuthSession.fromJson(Map<String, dynamic>.from(item as Map))).toList();
+  }
+
+  Future<void> revokeSession(String id) async {
+    await _request<dynamic>(() => _dio.delete<dynamic>('/api/v1/auth/sessions/${Uri.encodeComponent(id)}'));
+  }
+
+  Future<UserProfile> getProfile() async {
+    final raw = await _request<Map<String, dynamic>>(() => _dio.get<Map<String, dynamic>>('/api/v1/profile'));
+    return UserProfile.fromJson(raw);
+  }
+
+  Future<UserProfile> updateProfile({required String? displayName}) async {
+    final raw = await _request<Map<String, dynamic>>(() => _dio.patch<Map<String, dynamic>>('/api/v1/profile', data: {'display_name': displayName}));
+    return UserProfile.fromJson(raw);
+  }
+
+  Future<UserPreferences> getPreferences() async {
+    final raw = await _request<Map<String, dynamic>>(() => _dio.get<Map<String, dynamic>>('/api/v1/preferences'));
+    return UserPreferences.fromJson(raw);
+  }
+
+  Future<UserPreferences> updatePreferences({String? locale, String? theme, bool? historyEnabled}) async {
+    final raw = await _request<Map<String, dynamic>>(() => _dio.patch<Map<String, dynamic>>('/api/v1/preferences', data: {if (locale != null) 'locale': locale, if (theme != null) 'theme': theme, if (historyEnabled != null) 'history_enabled': historyEnabled}));
+    return UserPreferences.fromJson(raw);
+  }
+
+  Future<SyncStatus> getSyncStatus() async {
+    final raw = await _request<Map<String, dynamic>>(() => _dio.get<Map<String, dynamic>>('/api/v1/sync/status'));
+    return SyncStatus.fromJson(raw);
+  }
+
+  Future<SyncStatus> setSyncConsent(bool enabled) async {
+    final raw = await _request<Map<String, dynamic>>(() => _dio.patch<Map<String, dynamic>>('/api/v1/sync/consent', data: {'enabled': enabled}));
+    return SyncStatus.fromJson(raw);
+  }
+
+  Future<SyncStatus> updateSyncPreferences({String? locale, String? theme}) async {
+    final raw = await _request<Map<String, dynamic>>(() => _dio.patch<Map<String, dynamic>>('/api/v1/sync/preferences', data: {if (locale != null) 'locale': locale, if (theme != null) 'theme': theme}));
+    return SyncStatus.fromJson(raw);
+  }
+
+  Future<Map<String, dynamic>> previewSync(List<SyncRecord> records) async {
+    return _request<Map<String, dynamic>>(() => _dio.post<Map<String, dynamic>>('/api/v1/sync/preview', data: {'records': records.map((record) => record.toJson()).toList()}));
+  }
+
+  Future<Map<String, dynamic>> importSync(List<SyncRecord> records, {required String idempotencyKey}) async {
+    return _request<Map<String, dynamic>>(() => _dio.post<Map<String, dynamic>>('/api/v1/sync/import', data: {'records': records.map((record) => record.toJson()).toList(), 'idempotency_key': idempotencyKey}, options: Options(headers: {'Idempotency-Key': idempotencyKey})));
+  }
+
+  Future<SyncChanges> getSyncChanges({String? cursor}) async {
+    final raw = await _request<Map<String, dynamic>>(() => _dio.get<Map<String, dynamic>>('/api/v1/sync/changes', queryParameters: {'limit': 50, if (cursor != null) 'cursor': cursor}));
+    return SyncChanges.fromJson(raw);
+  }
+
+  Future<AccountHistoryResponse> getHistory({int limit = 20, int offset = 0}) async {
+    final raw = await _request<Map<String, dynamic>>(() => _dio.get<Map<String, dynamic>>('/api/v1/history', queryParameters: {'limit': limit, 'offset': offset}));
+    return AccountHistoryResponse.fromJson(raw);
+  }
+
+  Future<AccountHistoryItem> saveHistory({required String sourceLanguage, required String targetLanguage, required String sourceText, required String translatedText, required String provider}) async {
+    final raw = await _request<Map<String, dynamic>>(() => _dio.post<Map<String, dynamic>>('/api/v1/history', data: {'source_language': sourceLanguage, 'target_language': targetLanguage, 'source_text': sourceText, 'translated_text': translatedText, 'provider': provider}));
+    return AccountHistoryItem.fromJson(raw);
+  }
+
+  Future<void> deleteHistory(String id) async {
+    await _request<dynamic>(() => _dio.delete<dynamic>('/api/v1/history/${Uri.encodeComponent(id)}'));
+  }
+
+  Future<void> clearHistory() async {
+    await _request<dynamic>(() => _dio.delete<dynamic>('/api/v1/history'));
+  }
+
+  Future<FavoritesResponse> getFavorites({int limit = 20, int offset = 0}) async {
+    final raw = await _request<Map<String, dynamic>>(() => _dio.get<Map<String, dynamic>>('/api/v1/favorites', queryParameters: {'limit': limit, 'offset': offset}));
+    return FavoritesResponse.fromJson(raw);
+  }
+
+  Future<FavoriteItem> createFavorite(String translationId) async {
+    final raw = await _request<Map<String, dynamic>>(() => _dio.post<Map<String, dynamic>>('/api/v1/favorites', data: {'translation_id': translationId}));
+    return FavoriteItem.fromJson(raw);
+  }
+
+  Future<void> deleteFavorite(String id) async {
+    await _request<dynamic>(() => _dio.delete<dynamic>('/api/v1/favorites/${Uri.encodeComponent(id)}'));
+  }
 
   Future<List<Map<String, dynamic>>> getLanguages() async {
     final response = await _request(() => _dio.get<List<dynamic>>('/api/v1/languages'));

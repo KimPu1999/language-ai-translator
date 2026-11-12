@@ -125,6 +125,94 @@ export type ApiError = {
   error?: { code?: string; message?: string; request_id?: string };
 };
 
+export type AuthUser = {
+  id: string;
+  email: string;
+  email_verified: boolean;
+  is_active: boolean;
+  created_at: string;
+};
+
+export type AuthResponse = {
+  user: AuthUser;
+  access_token?: string | null;
+  token_type?: string | null;
+  csrf_token?: string | null;
+  expires_at: string;
+};
+
+export type Profile = AuthUser & { display_name: string | null };
+
+export type UserPreferences = {
+  locale: "en" | "my";
+  theme: "light" | "dark" | "system";
+  history_enabled: boolean;
+};
+
+export type AuthSession = {
+  id: string;
+  device_name: string | null;
+  user_agent: string | null;
+  created_at: string;
+  last_seen_at: string;
+  expires_at: string;
+  current: boolean;
+};
+
+export type AccountHistoryItem = {
+  id: string;
+  source_language: string;
+  target_language: string;
+  source_text: string;
+  translated_text: string;
+  provider: string;
+  created_at: string;
+};
+
+export type AccountHistoryResponse = {
+  items: AccountHistoryItem[];
+  total: number;
+  limit: number;
+  offset: number;
+};
+
+export type FavoriteItem = {
+  id: string;
+  translation_id: string;
+  created_at: string;
+  translation: AccountHistoryItem;
+};
+
+export type FavoritesResponse = {
+  items: FavoriteItem[];
+  total: number;
+  limit: number;
+  offset: number;
+};
+
+export type SyncRecordInput = {
+  entity_type: "translation" | "favorite";
+  client_record_id: string;
+  client_updated_at: string;
+  deleted?: boolean;
+  source_language?: string;
+  target_language?: string;
+  source_text?: string;
+  translated_text?: string;
+  provider?: string;
+  translation_client_record_id?: string;
+};
+
+export type SyncStatus = {
+  enabled: boolean;
+  server_time: string;
+  preferences: { locale: "en" | "my"; theme: "light" | "dark" | "system" };
+};
+export type SyncPreviewResponse = { accepted_count: number; rejected_count: number; items: { client_record_id: string; entity_type: "translation" | "favorite"; accepted: boolean; reason?: string | null }[] };
+export type SyncImportResponse = { items: { client_record_id: string; entity_type: "translation" | "favorite"; status: "applied" | "ignored" | "deleted" | "rejected"; server_record_id?: string | null; version?: number | null; error_code?: string | null }[]; next_cursor?: string | null };
+export type SyncRecord = SyncRecordInput & { server_record_id?: string | null; version: number; updated_at: string; deleted: boolean };
+export type SyncChangesResponse = { items: SyncRecord[]; next_cursor?: string | null; has_more: boolean };
+
 export class ApiRequestError extends Error {
   readonly status: number;
   readonly code?: string;

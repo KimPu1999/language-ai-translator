@@ -39,6 +39,7 @@ class PreferencesResponse(BaseModel):
     locale: Literal["en", "my"]
     theme: Literal["light", "dark", "system"]
     history_enabled: bool
+    sync_enabled: bool = False
 
 
 class PreferencesUpdateRequest(BaseModel):
@@ -47,6 +48,7 @@ class PreferencesUpdateRequest(BaseModel):
     locale: Literal["en", "my"] | None = None
     theme: Literal["light", "dark", "system"] | None = None
     history_enabled: bool | None = None
+    sync_enabled: bool | None = None
 
 
 class HistoryCreateRequest(BaseModel):

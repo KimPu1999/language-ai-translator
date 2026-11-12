@@ -121,7 +121,7 @@ async def test_profile_update_does_not_accept_or_change_email():
 @pytest.mark.asyncio
 async def test_account_deletion_requires_reauthentication_and_cleans_account(tmp_path):
     context = account_context()
-    context.user.password_hash = PASSWORD_HASHER.hash("CorrectHorse9!")
+    context.user.password_hash = PASSWORD_HASHER.hash("Correct9!A")
     db = FakeDeletionDB()
     service = AccountService(db, storage_root=str(tmp_path))
 
@@ -130,7 +130,7 @@ async def test_account_deletion_requires_reauthentication_and_cleans_account(tmp
     assert error.value.code == "RECENT_REAUTHENTICATION_REQUIRED"
     assert db.commits == 0
 
-    await service.delete_account(context, "CorrectHorse9!")
+    await service.delete_account(context, "Correct9!A")
     assert db.commits == 1
 
 

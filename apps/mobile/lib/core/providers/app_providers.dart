@@ -7,8 +7,30 @@ import '../models/language.dart';
 import '../models/ocr.dart';
 import '../models/speech.dart';
 import '../network/api_client.dart';
+import '../security/secure_session_store.dart';
+import '../../features/auth/auth_controller.dart';
+import '../local_storage/local_library.dart';
+import '../sync/sync_queue.dart';
 
-final apiClientProvider = Provider<ApiClient>((ref) => ApiClient());
+final secureSessionStoreProvider = Provider<SecureSessionStore>((ref) => SecureSessionStore());
+
+final apiClientProvider = Provider<ApiClient>((ref) {
+  return ApiClient(
+    sessionStore: ref.watch(secureSessionStoreProvider),
+    onSessionExpired: () => ref.read(authProvider.notifier).expire(),
+  );
+});
+
+final authProvider = StateNotifierProvider<AuthController, AuthState>((ref) {
+  return AuthController(
+    ref.watch(apiClientProvider),
+    ref.watch(secureSessionStoreProvider),
+    onPrivateDataClear: () async {
+      await ref.read(localLibraryProvider.notifier).clearPrivateData();
+      await ref.read(syncQueueProvider.notifier).clearAll();
+    },
+  );
+});
 
 final languagesProvider = FutureProvider<List<Language>>((ref) async {
   final raw = await ref.watch(apiClientProvider).getLanguages();

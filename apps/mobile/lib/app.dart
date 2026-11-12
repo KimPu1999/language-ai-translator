@@ -15,16 +15,60 @@ import 'features/settings/settings_page.dart';
 import 'features/text/text_page.dart';
 import 'features/voice/voice_page.dart';
 import 'features/conversation/conversation_page.dart';
+import 'features/auth/auth_pages.dart';
+import 'features/account/account_page.dart';
+import 'features/sync/sync_page.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
 class LinguaApp extends ConsumerWidget {
   const LinguaApp({super.key});
   @override
-  Widget build(BuildContext context, WidgetRef ref) { final locale = ref.watch(localeProvider); final themeMode = ref.watch(themeModeProvider); return MaterialApp.router(title: 'Lingua', theme: AppTheme.light(), darkTheme: AppTheme.dark(), themeMode: themeMode, locale: locale, supportedLocales: const [Locale('en'), Locale('my')], localizationsDelegates: const [AppStringsDelegate(), GlobalMaterialLocalizations.delegate, GlobalWidgetsLocalizations.delegate, GlobalCupertinoLocalizations.delegate], routerConfig: _router); }
+  Widget build(BuildContext context, WidgetRef ref) { final locale = ref.watch(localeProvider); final themeMode = ref.watch(themeModeProvider); final router = ref.watch(routerProvider); return MaterialApp.router(title: 'Lingua', theme: AppTheme.light(), darkTheme: AppTheme.dark(), themeMode: themeMode, locale: locale, supportedLocales: const [Locale('en'), Locale('my')], localizationsDelegates: const [AppStringsDelegate(), GlobalMaterialLocalizations.delegate, GlobalWidgetsLocalizations.delegate, GlobalCupertinoLocalizations.delegate], builder: (context, child) => AuthLifecycle(child: child ?? const SizedBox.shrink()), routerConfig: router); }
 }
 
-final _router = GoRouter(navigatorKey: _rootNavigatorKey, initialLocation: '/text', routes: [GoRoute(path: '/', redirect: (_, __) => '/home'), ShellRoute(builder: (context, state, child) => _AppShell(child: child, location: state.uri.path), routes: [GoRoute(path: '/home', pageBuilder: (context, state) => const NoTransitionPage(child: HomePage())), GoRoute(path: '/text', pageBuilder: (context, state) => const NoTransitionPage(child: TextPage())), GoRoute(path: '/voice', pageBuilder: (context, state) => const NoTransitionPage(child: VoicePage())), GoRoute(path: '/conversation', pageBuilder: (context, state) => const NoTransitionPage(child: ConversationPage())), GoRoute(path: '/camera', pageBuilder: (context, state) => const NoTransitionPage(child: CameraPage())), GoRoute(path: '/documents', pageBuilder: (context, state) => const NoTransitionPage(child: DocumentsPage())), GoRoute(path: '/history', pageBuilder: (context, state) => const NoTransitionPage(child: HistoryPage())), GoRoute(path: '/favorites', pageBuilder: (context, state) => const NoTransitionPage(child: FavoritesPage())), GoRoute(path: '/settings', pageBuilder: (context, state) => const NoTransitionPage(child: SettingsPage()))])]);
+class _AuthRouterRefresh extends ChangeNotifier {}
+
+final _authRouterRefreshProvider = Provider<_AuthRouterRefresh>((ref) {
+  final refresh = _AuthRouterRefresh();
+  ref.listen<AuthState>(authProvider, (_, __) => refresh.notifyListeners());
+  ref.onDispose(refresh.dispose);
+  return refresh;
+});
+
+final routerProvider = Provider<GoRouter>((ref) {
+  final refresh = ref.watch(_authRouterRefreshProvider);
+  final protectedPaths = {'/account', '/profile', '/security', '/history', '/favorites', '/sync'};
+  return GoRouter(navigatorKey: _rootNavigatorKey, refreshListenable: refresh, initialLocation: '/text', redirect: (_, state) {
+    final auth = ref.read(authProvider);
+    final isAuthRoute = state.uri.path.startsWith('/auth/');
+    if (auth.isAuthenticated && isAuthRoute) return '/text';
+    if (!auth.isAuthenticated && auth.status != AuthStatus.loading && protectedPaths.contains(state.uri.path)) return '/auth/sign-in';
+    return null;
+  }, routes: [
+    GoRoute(path: '/', redirect: (_, __) => '/home'),
+    GoRoute(path: '/auth/sign-in', pageBuilder: (context, state) => const NoTransitionPage(child: SignInPage())),
+    GoRoute(path: '/auth/register', pageBuilder: (context, state) => const NoTransitionPage(child: RegisterPage())),
+    GoRoute(path: '/auth/verify-email', pageBuilder: (context, state) => NoTransitionPage(child: VerifyEmailPage(initialToken: state.uri.queryParameters['token']))),
+    GoRoute(path: '/auth/forgot-password', pageBuilder: (context, state) => const NoTransitionPage(child: ForgotPasswordPage())),
+    GoRoute(path: '/auth/reset-password', pageBuilder: (context, state) => NoTransitionPage(child: ResetPasswordPage(initialToken: state.uri.queryParameters['token']))),
+    ShellRoute(builder: (context, state, child) => _AppShell(child: child, location: state.uri.path), routes: [
+      GoRoute(path: '/home', pageBuilder: (context, state) => const NoTransitionPage(child: HomePage())),
+      GoRoute(path: '/text', pageBuilder: (context, state) => const NoTransitionPage(child: TextPage())),
+      GoRoute(path: '/voice', pageBuilder: (context, state) => const NoTransitionPage(child: VoicePage())),
+      GoRoute(path: '/conversation', pageBuilder: (context, state) => const NoTransitionPage(child: ConversationPage())),
+      GoRoute(path: '/camera', pageBuilder: (context, state) => const NoTransitionPage(child: CameraPage())),
+      GoRoute(path: '/documents', pageBuilder: (context, state) => const NoTransitionPage(child: DocumentsPage())),
+      GoRoute(path: '/account', pageBuilder: (context, state) => NoTransitionPage(child: AuthGate(child: AccountPage()))),
+      GoRoute(path: '/profile', pageBuilder: (context, state) => NoTransitionPage(child: AuthGate(child: ProfilePage()))),
+      GoRoute(path: '/security', pageBuilder: (context, state) => NoTransitionPage(child: AuthGate(child: SecurityPage()))),
+      GoRoute(path: '/history', pageBuilder: (context, state) => NoTransitionPage(child: AuthGate(child: HistoryPage()))),
+      GoRoute(path: '/favorites', pageBuilder: (context, state) => NoTransitionPage(child: AuthGate(child: FavoritesPage()))),
+      GoRoute(path: '/sync', pageBuilder: (context, state) => NoTransitionPage(child: AuthGate(child: SyncPage()))),
+      GoRoute(path: '/settings', pageBuilder: (context, state) => const NoTransitionPage(child: SettingsPage())),
+    ]),
+  ]);
+});
 
 class _AppShell extends StatelessWidget {
   const _AppShell({required this.child, required this.location});

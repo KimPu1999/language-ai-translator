@@ -1,6 +1,20 @@
-# Lingua Mobile — Phase 5E
+# Lingua Mobile — Phase 6D
 
-Flutter/Dart mobile client for the FastAPI service. The app uses Riverpod for state, GoRouter for navigation, Dio for HTTP, Material 3, SharedPreferences for explicit local saves, a shared blue-white design system, and a small dependency-free EN/MM localization layer.
+Flutter/Dart mobile client for the FastAPI service. The app uses Riverpod for state, GoRouter for navigation, Dio for HTTP, Material 3, `flutter_secure_storage` for opaque bearer sessions, SharedPreferences only for explicit local saves, a shared blue-white design system, and a small dependency-free EN/MM localization layer.
+
+## Authentication
+
+Authentication is server-side through FastAPI. Mobile login requests send `client: mobile`; the returned opaque bearer token is stored only in the platform secure storage keychain/keystore and is attached by Dio as an `Authorization: Bearer` header. Tokens are never written to SharedPreferences, logs, or plain files. Logout and session expiry clear the token and private cached local history/favorites.
+
+Protected routes are `/account`, `/profile`, `/security`, `/history`, and `/favorites`. Signed-out users are redirected to `/auth/sign-in`. Registration, verification, password recovery, reset, profile updates, device-session revocation, and logout are backed by the existing FastAPI endpoints. History and favorites are fetched only after the authenticated state is established and are filtered by the backend account context.
+
+The mobile client does not use browser cookies or expose Azure/provider credentials. The API client maps 401/403 responses for an attached bearer token to session expiry, avoids token values in error messages, and keeps request timeouts bounded.
+
+When the app resumes from the background, the current session is revalidated. Offline resume failures do not discard a valid local session; explicit 401/403 responses revoke it and return the user to sign-in.
+
+## Private cloud synchronization
+
+The authenticated Sync page is off by default. Enabling it is explicit and does not upload existing local records. The user reviews and selects translation history/favorites before upload; the mobile client sends only those records and never audio, images, or documents. Uploads use stable local IDs and the API's deterministic conflict/tombstone rules. A small user-scoped SharedPreferences retry queue retains selected payloads when the network is unavailable and is cleared on logout or account switch. Cursor-paginated changes can be downloaded explicitly and merged into the opt-in local library.
 
 ## Setup
 

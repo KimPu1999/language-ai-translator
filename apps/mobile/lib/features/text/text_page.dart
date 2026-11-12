@@ -62,7 +62,7 @@ class _TextPageState extends ConsumerState<TextPage> {
             ]),
           ])),
           const SizedBox(height: 14),
-          _OutputCard(strings: strings, state: state, library: library, onRetry: controller.translate),
+          _OutputCard(strings: strings, state: state, library: library, authenticated: ref.watch(authProvider).isAuthenticated, onRetry: controller.translate),
         ]),
       ),
     );
@@ -96,10 +96,11 @@ class _EditorCard extends StatelessWidget {
 }
 
 class _OutputCard extends ConsumerWidget {
-  const _OutputCard({required this.strings, required this.state, required this.library, required this.onRetry});
+  const _OutputCard({required this.strings, required this.state, required this.library, required this.authenticated, required this.onRetry});
   final AppStrings strings;
   final TextTranslationState state;
   final LocalLibraryState library;
+  final bool authenticated;
   final VoidCallback onRetry;
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -110,7 +111,7 @@ class _OutputCard extends ConsumerWidget {
       const SizedBox(height: 12),
       ConstrainedBox(constraints: const BoxConstraints(minHeight: 148), child: state.isLoading ? const Center(child: CircularProgressIndicator()) : state.error != null ? _TranslationError(strings: strings, error: state.error!, onRetry: onRetry) : state.output.isEmpty ? _EmptyOutput(strings: strings) : Align(alignment: Alignment.topLeft, child: SelectableText(state.output, style: Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.65)))),
       const Divider(height: 26),
-      if (state.output.isEmpty) OutlinedButton.icon(onPressed: null, icon: const Icon(Icons.copy_rounded, size: 16), label: Text(strings.copy)) else Wrap(alignment: WrapAlignment.end, spacing: 4, runSpacing: 4, children: [OutlinedButton.icon(onPressed: () { Clipboard.setData(ClipboardData(text: state.output)); ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(strings.copied))); }, icon: const Icon(Icons.copy_rounded, size: 16), label: Text(strings.copy)), if (library.enabled && item != null) ...[OutlinedButton.icon(onPressed: () => ref.read(localLibraryProvider.notifier).save(item!), icon: const Icon(Icons.save_outlined, size: 16), label: Text(strings.saveLocally)), IconButton(tooltip: strings.favorite, onPressed: () => ref.read(localLibraryProvider.notifier).toggleFavorite(item!), icon: Icon(isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded, color: isFavorite ? Colors.redAccent : null))]]),
+      if (state.output.isEmpty) OutlinedButton.icon(onPressed: null, icon: const Icon(Icons.copy_rounded, size: 16), label: Text(strings.copy)) else Wrap(alignment: WrapAlignment.end, spacing: 4, runSpacing: 4, children: [OutlinedButton.icon(onPressed: () { Clipboard.setData(ClipboardData(text: state.output)); ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(strings.copied))); }, icon: const Icon(Icons.copy_rounded, size: 16), label: Text(strings.copy)), if (authenticated) ...[OutlinedButton.icon(onPressed: state.serverHistoryId == null ? () async { final ok = await ref.read(textTranslationProvider.notifier).saveToAccount(); if (context.mounted && ok) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(strings.savedToAccount))); } : null, icon: const Icon(Icons.cloud_upload_outlined, size: 16), label: Text(state.serverHistoryId == null ? strings.saveToAccount : strings.savedToAccount)), IconButton(tooltip: strings.favorite, onPressed: state.serverHistoryId == null ? null : () async { await ref.read(textTranslationProvider.notifier).toggleAccountFavorite(); }, icon: Icon(state.serverFavoriteId == null ? Icons.favorite_border_rounded : Icons.favorite_rounded, color: state.serverFavoriteId == null ? null : Colors.redAccent))], if (library.enabled && item != null) ...[OutlinedButton.icon(onPressed: () => ref.read(localLibraryProvider.notifier).save(item!), icon: const Icon(Icons.save_outlined, size: 16), label: Text(strings.saveLocally)), IconButton(tooltip: strings.favorite, onPressed: () => ref.read(localLibraryProvider.notifier).toggleFavorite(item!), icon: Icon(isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded, color: isFavorite ? Colors.redAccent : null))]]),
     ])));
   }
 }

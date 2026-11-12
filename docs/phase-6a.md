@@ -5,6 +5,10 @@ Phase 1–5 translation, OCR, speech, or document contracts.
 
 ## Account lifecycle
 
+New and reset passwords must be 8–12 characters and include at least three
+character classes. Login remains compatible with existing longer passwords so
+accounts created under the previous policy are not locked out.
+
 - `POST /api/v1/auth/register` creates an account and sends a verification
   message. Registration never signs the account in before email verification.
 - `POST /api/v1/auth/verify-email` consumes a single-use verification token.

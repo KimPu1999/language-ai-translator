@@ -15,6 +15,7 @@ from app.api.v1.endpoints import (
     languages,
     ocr,
     speech,
+    sync,
     translations,
     voice,
 )
@@ -62,6 +63,7 @@ app.include_router(account.router)
 app.include_router(languages.router)
 app.include_router(translations.router)
 app.include_router(speech.router)
+app.include_router(sync.router)
 app.include_router(voice.router)
 app.include_router(ocr.router)
 app.include_router(documents.router)

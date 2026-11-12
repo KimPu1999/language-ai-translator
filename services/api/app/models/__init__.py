@@ -6,6 +6,7 @@ from app.models.favorite import Favorite
 from app.models.language import Language
 from app.models.ocr_usage_event import OCRUsageEvent
 from app.models.speech_usage_event import SpeechUsageEvent
+from app.models.sync_record import SyncRecord
 from app.models.translation import Translation
 from app.models.translation_usage_event import TranslationUsageEvent
 from app.models.user import User
@@ -24,4 +25,5 @@ __all__ = [
     "AuthActionToken",
     "AuthSession",
     "UserPreference",
+    "SyncRecord",
 ]

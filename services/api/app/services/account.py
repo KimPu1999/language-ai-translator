@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 from datetime import UTC, datetime
 from typing import Any
 
@@ -13,6 +14,7 @@ from app.models.auth_action_token import AuthActionToken
 from app.models.auth_session import AuthSession
 from app.models.document_job import DocumentJob
 from app.models.favorite import Favorite
+from app.models.sync_record import SyncRecord
 from app.models.translation import Translation
 from app.models.user import User
 from app.models.user_preference import UserPreference
@@ -57,6 +59,7 @@ def _preferences(preference: UserPreference | None) -> PreferencesResponse:
         locale=preference.locale if preference else DEFAULT_LOCALE,
         theme=preference.theme if preference else DEFAULT_THEME,
         history_enabled=preference.history_enabled if preference else False,
+        sync_enabled=preference.sync_enabled if preference else False,
     )
 
 
@@ -85,6 +88,21 @@ def _validate_languages(source: str, target: str) -> None:
         )
 
 
+async def _mark_sync_deleted(
+    db: AsyncSession, user_id, *, entity_type: str, server_record_id=None
+) -> None:
+    filters = [SyncRecord.user_id == user_id, SyncRecord.entity_type == entity_type]
+    if server_record_id is not None:
+        filters.append(SyncRecord.server_record_id == server_record_id)
+    records = await db.scalars(select(SyncRecord).where(and_(*filters)))
+    now = _now()
+    for record in records:
+        record.version += 1
+        record.client_updated_at = now
+        record.deleted_at = now
+        record.updated_at = now
+        record.payload = {}
+        record.payload_hash = hashlib.sha256(b"").hexdigest()
 class ProfileService:
     def __init__(self, db: AsyncSession) -> None:
         self.db = db
@@ -122,6 +140,8 @@ class PreferenceService:
             preference.theme = payload.theme
         if payload.history_enabled is not None:
             preference.history_enabled = payload.history_enabled
+        if payload.sync_enabled is not None:
+            preference.sync_enabled = payload.sync_enabled
         await self.db.commit()
         return _preferences(preference)
 
@@ -198,6 +218,12 @@ class HistoryService:
         )
 
     async def delete(self, context: AuthContext, translation_id) -> None:
+        await _mark_sync_deleted(
+            self.db,
+            context.user.id,
+            entity_type="translation",
+            server_record_id=translation_id,
+        )
         result = await self.db.execute(
             delete(Translation).where(
                 Translation.id == translation_id, Translation.user_id == context.user.id
@@ -208,6 +234,8 @@ class HistoryService:
         await self.db.commit()
 
     async def clear(self, context: AuthContext) -> None:
+        await _mark_sync_deleted(self.db, context.user.id, entity_type="translation")
+        await _mark_sync_deleted(self.db, context.user.id, entity_type="favorite")
         await self.db.execute(delete(Favorite).where(Favorite.user_id == context.user.id))
         await self.db.execute(delete(Translation).where(Translation.user_id == context.user.id))
         await self.db.commit()
@@ -280,6 +308,12 @@ class FavoriteService:
         )
 
     async def delete(self, context: AuthContext, favorite_id) -> None:
+        await _mark_sync_deleted(
+            self.db,
+            context.user.id,
+            entity_type="favorite",
+            server_record_id=favorite_id,
+        )
         result = await self.db.execute(
             delete(Favorite).where(
                 Favorite.id == favorite_id, Favorite.user_id == context.user.id

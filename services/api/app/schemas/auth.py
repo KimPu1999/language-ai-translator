@@ -6,10 +6,15 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
+PASSWORD_MIN_LENGTH = 8
+PASSWORD_MAX_LENGTH = 12
+
 
 def validate_password_strength(value: str) -> str:
-    if len(value) < 12:
-        raise ValueError("Password must be at least 12 characters")
+    if len(value) < PASSWORD_MIN_LENGTH:
+        raise ValueError(f"Password must be at least {PASSWORD_MIN_LENGTH} characters")
+    if len(value) > PASSWORD_MAX_LENGTH:
+        raise ValueError(f"Password must be at most {PASSWORD_MAX_LENGTH} characters")
     groups = (
         any(char.islower() for char in value),
         any(char.isupper() for char in value),
@@ -22,7 +27,7 @@ def validate_password_strength(value: str) -> str:
 
 
 class PasswordRequest(BaseModel):
-    password: str = Field(min_length=1, max_length=1024)
+    password: str = Field(min_length=PASSWORD_MIN_LENGTH, max_length=PASSWORD_MAX_LENGTH)
 
     @field_validator("password")
     @classmethod
@@ -36,8 +41,11 @@ class RegisterRequest(PasswordRequest):
     device_name: str | None = Field(default=None, max_length=100)
 
 
-class LoginRequest(PasswordRequest):
+class LoginRequest(BaseModel):
     email: EmailStr
+    # Keep login compatible with accounts created under the previous policy;
+    # the 8–12 character rule applies when setting a password.
+    password: str = Field(min_length=1, max_length=1024)
     client: Literal["web", "mobile"] = "web"
     device_name: str | None = Field(default=None, max_length=100)
 

@@ -1,0 +1,15 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Myanmar:wght@400;500;600;700&display=swap");
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { font-family: Inter, "Noto Sans Myanmar", ui-sans-serif, system-ui, sans-serif; color: #11233f; background: #f5f8fc; font-synthesis: none; text-rendering: optimizeLegibility; }
+* { box-sizing: border-box; }
+body { min-width: 320px; min-height: 100vh; margin: 0; }
+button, textarea, select { font: inherit; }
+button:focus-visible, textarea:focus-visible, select:focus-visible, a:focus-visible { outline: 3px solid #7db3ff; outline-offset: 3px; }
+.dark body { color: #e7efff; background: #0d1728; }
+.dark .surface { background: #13233b; border-color: #29415f; }
+.dark .muted-surface { background: #101d31; border-color: #29415f; }
+.dark .subtle { color: #a8bad4; }
+

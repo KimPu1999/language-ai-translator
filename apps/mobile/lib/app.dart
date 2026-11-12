@@ -14,6 +14,7 @@ import 'features/home/home_page.dart';
 import 'features/settings/settings_page.dart';
 import 'features/text/text_page.dart';
 import 'features/voice/voice_page.dart';
+import 'features/conversation/conversation_page.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -23,7 +24,7 @@ class LinguaApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) { final locale = ref.watch(localeProvider); final themeMode = ref.watch(themeModeProvider); return MaterialApp.router(title: 'Lingua', theme: AppTheme.light(), darkTheme: AppTheme.dark(), themeMode: themeMode, locale: locale, supportedLocales: const [Locale('en'), Locale('my')], localizationsDelegates: const [AppStringsDelegate(), GlobalMaterialLocalizations.delegate, GlobalWidgetsLocalizations.delegate, GlobalCupertinoLocalizations.delegate], routerConfig: _router); }
 }
 
-final _router = GoRouter(navigatorKey: _rootNavigatorKey, initialLocation: '/text', routes: [GoRoute(path: '/', redirect: (_, __) => '/home'), ShellRoute(builder: (context, state, child) => _AppShell(child: child, location: state.uri.path), routes: [GoRoute(path: '/home', pageBuilder: (context, state) => const NoTransitionPage(child: HomePage())), GoRoute(path: '/text', pageBuilder: (context, state) => const NoTransitionPage(child: TextPage())), GoRoute(path: '/voice', pageBuilder: (context, state) => const NoTransitionPage(child: VoicePage())), GoRoute(path: '/camera', pageBuilder: (context, state) => const NoTransitionPage(child: CameraPage())), GoRoute(path: '/documents', pageBuilder: (context, state) => const NoTransitionPage(child: DocumentsPage())), GoRoute(path: '/history', pageBuilder: (context, state) => const NoTransitionPage(child: HistoryPage())), GoRoute(path: '/favorites', pageBuilder: (context, state) => const NoTransitionPage(child: FavoritesPage())), GoRoute(path: '/settings', pageBuilder: (context, state) => const NoTransitionPage(child: SettingsPage()))])]);
+final _router = GoRouter(navigatorKey: _rootNavigatorKey, initialLocation: '/text', routes: [GoRoute(path: '/', redirect: (_, __) => '/home'), ShellRoute(builder: (context, state, child) => _AppShell(child: child, location: state.uri.path), routes: [GoRoute(path: '/home', pageBuilder: (context, state) => const NoTransitionPage(child: HomePage())), GoRoute(path: '/text', pageBuilder: (context, state) => const NoTransitionPage(child: TextPage())), GoRoute(path: '/voice', pageBuilder: (context, state) => const NoTransitionPage(child: VoicePage())), GoRoute(path: '/conversation', pageBuilder: (context, state) => const NoTransitionPage(child: ConversationPage())), GoRoute(path: '/camera', pageBuilder: (context, state) => const NoTransitionPage(child: CameraPage())), GoRoute(path: '/documents', pageBuilder: (context, state) => const NoTransitionPage(child: DocumentsPage())), GoRoute(path: '/history', pageBuilder: (context, state) => const NoTransitionPage(child: HistoryPage())), GoRoute(path: '/favorites', pageBuilder: (context, state) => const NoTransitionPage(child: FavoritesPage())), GoRoute(path: '/settings', pageBuilder: (context, state) => const NoTransitionPage(child: SettingsPage()))])]);
 
 class _AppShell extends StatelessWidget {
   const _AppShell({required this.child, required this.location});

@@ -42,11 +42,53 @@ class InMemoryTranslationRateLimiter:
             return RateLimitDecision(True)
 
 
+class InMemorySpeechRateLimiter:
+    def __init__(self, settings: Settings):
+        self._request_limit = settings.speech_rate_limit_requests
+        self._byte_limit = settings.speech_rate_limit_bytes
+        self._character_limit = settings.speech_rate_limit_characters
+        self._window_seconds = settings.rate_limit_window_seconds
+        self._buckets: dict[str, tuple[float, int, int, int]] = {}
+        self._lock = asyncio.Lock()
+
+    async def check(
+        self, key: str, *, input_bytes: int = 0, characters: int = 0
+    ) -> RateLimitDecision:
+        now = time.monotonic()
+        async with self._lock:
+            start, requests, used_bytes, used_characters = self._buckets.get(
+                key, (now, 0, 0, 0)
+            )
+            if now - start >= self._window_seconds:
+                start, requests, used_bytes, used_characters = now, 0, 0, 0
+            retry_after = max(1, int(self._window_seconds - (now - start)))
+            if requests >= self._request_limit:
+                return RateLimitDecision(False, "SPEECH_RATE_LIMIT_EXCEEDED", retry_after)
+            if used_bytes + input_bytes > self._byte_limit:
+                return RateLimitDecision(False, "SPEECH_BYTE_USAGE_LIMIT_EXCEEDED", retry_after)
+            if used_characters + characters > self._character_limit:
+                return RateLimitDecision(
+                    False, "SPEECH_CHARACTER_USAGE_LIMIT_EXCEEDED", retry_after
+                )
+            self._buckets[key] = (
+                start,
+                requests + 1,
+                used_bytes + input_bytes,
+                used_characters + characters,
+            )
+            return RateLimitDecision(True)
+
+
 _limiter = InMemoryTranslationRateLimiter(get_settings())
+_speech_limiter = InMemorySpeechRateLimiter(get_settings())
 
 
 def get_translation_rate_limiter() -> InMemoryTranslationRateLimiter:
     return _limiter
+
+
+def get_speech_rate_limiter() -> InMemorySpeechRateLimiter:
+    return _speech_limiter
 
 
 async def enforce_translation_rate_limit(

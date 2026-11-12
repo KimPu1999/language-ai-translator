@@ -43,6 +43,40 @@ class AppStrings {
   String get loading => isMyanmar ? 'ရလဒ်ကို ပြင်ဆင်နေသည်…' : 'Preparing your result…';
   String get retry => isMyanmar ? 'ထပ်ကြိုးစားရန်' : 'Try again';
   String get comingLater => isMyanmar ? 'နောက်မှ ရရှိမည်' : 'Coming later';
+  String get voiceTranslator => isMyanmar ? 'အသံ ဘာသာပြန်စနစ်' : 'Voice translator';
+  String get voiceTranslatorBody => isMyanmar ? 'အသံတိုတစ်ခုကို မှတ်တမ်းတင်ပြီး စာသားကို စစ်ဆေးကာ ဘာသာပြန်ပါ။' : 'Record a short message, review the transcript, then translate when ready.';
+  String get spokenLanguage => isMyanmar ? 'ပြောသော ဘာသာစကား' : 'Spoken language';
+  String get recording => isMyanmar ? 'အသံမှတ်တမ်း' : 'Recording';
+  String get recordingNow => isMyanmar ? 'အသံမှတ်တမ်းတင်နေသည်' : 'Recording now';
+  String get pressToRecord => isMyanmar ? 'မှတ်တမ်းတင်ရန် နှိပ်ပါ' : 'Press to record';
+  String get startRecording => isMyanmar ? 'မှတ်တမ်းတင်ရန် စတင်ပါ' : 'Start recording';
+  String get stopRecording => isMyanmar ? 'မှတ်တမ်းတင်ခြင်း ရပ်ရန်' : 'Stop recording';
+  String get cancel => isMyanmar ? 'ပယ်ဖျက်ရန်' : 'Cancel';
+  String get transcript => isMyanmar ? 'အသံမှ စာသား' : 'Transcript';
+  String get transcriptPlaceholder => isMyanmar ? 'အသံမှ စာသားသည် ဤနေရာတွင် ပေါ်လာမည်…' : 'Your transcript will appear here…';
+  String get translating => isMyanmar ? 'ဘာသာပြန်နေသည်…' : 'Translating…';
+  String get translationResult => isMyanmar ? 'ဘာသာပြန်ရလဒ်' : 'Translation result';
+  String get voice => isMyanmar ? 'အသံ' : 'Voice';
+  String get generateAudio => isMyanmar ? 'အသံဖန်တီးရန်' : 'Generate audio';
+  String get generatingAudio => isMyanmar ? 'အသံဖန်တီးနေသည်…' : 'Generating audio…';
+  String get audioReady => isMyanmar ? 'အသံအဆင်သင့်ဖြစ်ပါပြီ' : 'Audio ready';
+  String get play => isMyanmar ? 'ဖွင့်ရန်' : 'Play';
+  String get pause => isMyanmar ? 'ခဏရပ်ရန်' : 'Pause';
+  String get stop => isMyanmar ? 'ရပ်ရန်' : 'Stop';
+  String get replay => isMyanmar ? 'ပြန်ဖွင့်ရန်' : 'Replay';
+  String get voiceProviderUnavailable => isMyanmar ? 'အသံဝန်ဆောင်မှုကို မသတ်မှတ်ရသေးပါ။ အသံကို တင်မည်မဟုတ်ပါ။' : 'Voice processing is not configured. Audio will not be uploaded.';
+  String get voiceCapabilitiesError => isMyanmar ? 'အသံလုပ်ဆောင်ချက်များကို ရယူ၍ မရပါ။ API ကို စစ်ဆေးပါ။' : 'Voice capabilities could not be loaded. Check that the API is running.';
+  String get conversation => isMyanmar ? 'နှစ်ဖက်စကားပြော' : 'Conversation';
+  String get conversationBody => isMyanmar ? 'လူနှစ်ဦးအတွက် ဘာသာစကားနှင့် အသံကို သီးခြားရွေးပြီး အလှည့်ကျ ပြောပါ။' : 'Choose independent languages and voices for two people, then take turns speaking.';
+  String get conversationPushToTalk => isMyanmar ? 'Push-to-talk သာ အသုံးပြုနိုင်သည်။ တစ်ချိန်တွင် မိုက်ခရိုဖုန်းတစ်ခုသာ အသံဖမ်းမည်။ အသံကို အလိုအလျောက် မသိမ်းပါ။' : 'Push-to-talk only. One microphone records at a time. Audio is not stored automatically.';
+  String get personA => isMyanmar ? 'လူ A' : 'Person A';
+  String get personB => isMyanmar ? 'လူ B' : 'Person B';
+  String get conversationPush => isMyanmar ? 'ပြောရန်နှိပ်ပါ' : 'Push to talk';
+  String get conversationStop => isMyanmar ? 'အသံဖမ်းခြင်းရပ်ရန်' : 'Stop recording';
+  String get conversationTranscript => isMyanmar ? 'စကားပြောမှတ်တမ်း' : 'Conversation transcript';
+  String get conversationEnd => isMyanmar ? 'စကားပြောမှု ပိတ်ရန်' : 'End conversation';
+  String get conversationClear => isMyanmar ? 'ဆက်ရှင်ရှင်းရန်' : 'Clear session';
+  String get conversationEnded => isMyanmar ? 'စကားပြောမှု ပိတ်ပြီးပါပြီ။ အသစ်စရန် ဆက်ရှင်ကို ရှင်းပါ။' : 'Conversation ended. Clear the session to start again.';
 }
 
 class AppStringsDelegate extends LocalizationsDelegate<AppStrings> {

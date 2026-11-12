@@ -1,7 +1,7 @@
 from functools import lru_cache
 from urllib.parse import urlparse
 
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -15,6 +15,12 @@ class Settings(BaseSettings):
     azure_translator_endpoint: str = "https://api.cognitive.microsofttranslator.com"
     azure_translator_region: str | None = None
     azure_translator_timeout_seconds: float = 10.0
+    azure_speech_key: str | None = None
+    azure_speech_region: str | None = None
+    azure_speech_timeout_seconds: float = 30.0
+    speech_rate_limit_requests: int = 30
+    speech_rate_limit_bytes: int = 50_000_000
+    speech_rate_limit_characters: int = 100_000
     rate_limit_requests: int = 60
     rate_limit_characters: int = 100_000
     rate_limit_window_seconds: int = 60
@@ -38,13 +44,27 @@ class Settings(BaseSettings):
             return [origin.strip() for origin in value.split(",") if origin.strip()]
         return value
 
-    @field_validator("azure_translator_key", "azure_translator_region", mode="before")
+    @field_validator(
+        "azure_translator_key",
+        "azure_translator_region",
+        "azure_speech_key",
+        "azure_speech_region",
+        mode="before",
+    )
     @classmethod
     def normalize_optional_secret_values(cls, value: str | None) -> str | None:
         if value is None:
             return None
         stripped = value.strip()
         return stripped or None
+
+    @model_validator(mode="after")
+    def validate_speech_configuration(self) -> "Settings":
+        if bool(self.azure_speech_key) != bool(self.azure_speech_region):
+            raise ValueError(
+                "AZURE_SPEECH_KEY and AZURE_SPEECH_REGION must be configured together"
+            )
+        return self
 
     @field_validator("azure_translator_endpoint")
     @classmethod
@@ -66,11 +86,29 @@ class Settings(BaseSettings):
             raise ValueError("AZURE_TRANSLATOR_TIMEOUT_SECONDS must be between 0 and 60")
         return value
 
+    @field_validator("azure_speech_timeout_seconds")
+    @classmethod
+    def require_bounded_speech_timeout(cls, value: float) -> float:
+        if value <= 0 or value > 120:
+            raise ValueError("AZURE_SPEECH_TIMEOUT_SECONDS must be between 0 and 120")
+        return value
+
     @field_validator("rate_limit_requests", "rate_limit_characters", "rate_limit_window_seconds")
     @classmethod
     def require_positive_limits(cls, value: int) -> int:
         if value <= 0:
             raise ValueError("Rate and usage limits must be positive")
+        return value
+
+    @field_validator(
+        "speech_rate_limit_requests",
+        "speech_rate_limit_bytes",
+        "speech_rate_limit_characters",
+    )
+    @classmethod
+    def require_positive_speech_limits(cls, value: int) -> int:
+        if value <= 0:
+            raise ValueError("Speech rate and usage limits must be positive")
         return value
 
     @field_validator("translation_cache_ttl_seconds")

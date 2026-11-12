@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.exc import SQLAlchemyError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from app.api.v1.endpoints import health, languages, translations
+from app.api.v1.endpoints import health, languages, speech, translations, voice
 from app.core.config import get_settings
 from app.core.errors import (
     database_exception_handler,
@@ -39,3 +39,5 @@ app.add_exception_handler(StarletteHTTPException, http_exception_handler)
 app.include_router(health.router)
 app.include_router(languages.router)
 app.include_router(translations.router)
+app.include_router(speech.router)
+app.include_router(voice.router)

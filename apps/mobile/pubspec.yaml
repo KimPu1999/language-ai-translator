@@ -1,5 +1,5 @@
 name: lingua_mobile
-description: Lingua AI Translator mobile client — Phase 2D.
+description: Lingua AI Translator mobile client — Phase 3D.
 publish_to: "none"
 version: 0.1.0+1
 
@@ -15,6 +15,9 @@ dependencies:
     sdk: flutter
   flutter_riverpod: ^2.6.1
   go_router: ^14.6.2
+  just_audio: ^0.9.42
+  path_provider: ^2.1.5
+  record: ^5.1.2
   shared_preferences: ^2.3.3
 
 dev_dependencies:

@@ -5,12 +5,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:lingua_mobile/core/localization/app_strings.dart';
 import 'package:lingua_mobile/core/models/language.dart';
+import 'package:lingua_mobile/core/models/speech.dart';
 import 'package:lingua_mobile/core/network/api_client.dart';
 import 'package:lingua_mobile/core/models/translation.dart';
 import 'package:lingua_mobile/core/providers/app_providers.dart';
 import 'package:lingua_mobile/features/text/text_page.dart';
 import 'package:lingua_mobile/widgets/feature_unavailable.dart';
 import 'package:lingua_mobile/features/text/text_controller.dart';
+import 'package:lingua_mobile/features/voice/voice_page.dart';
 
 class _FakeApiClient extends ApiClient {
   @override
@@ -33,6 +35,26 @@ class _TranslationApiClient extends ApiClient {
     if (failure != null) throw failure!;
     return const TranslationResponse(translatedText: 'Hello', provider: 'test');
   }
+}
+
+class _VoiceApiClient extends ApiClient {
+  @override
+  Future<List<Map<String, dynamic>>> getLanguages() async => [
+        {'code': 'en', 'name': 'English', 'is_source_enabled': true, 'is_target_enabled': true},
+        {'code': 'my', 'name': 'Burmese', 'is_source_enabled': true, 'is_target_enabled': true},
+      ];
+
+  @override
+  Future<SpeechCapabilities> getSpeechCapabilities() async => SpeechCapabilities.fromJson({
+        'provider': 'azure',
+        'provider_configured': true,
+        'speech_recognition': true,
+        'speech_synthesis': true,
+        'languages': [
+          {'text_code': 'en', 'locale': 'en-US', 'stt_enabled': true, 'tts_enabled': true, 'voices': [{'name': 'en-US-JennyNeural', 'locale': 'en-US', 'gender': 'Female'}]},
+          {'text_code': 'my', 'locale': 'my-MM', 'stt_enabled': true, 'tts_enabled': true, 'voices': [{'name': 'my-MM-NilarNeural', 'locale': 'my-MM', 'gender': 'Female'}]},
+        ],
+      });
 }
 
 Widget _wrap(Widget child) => ProviderScope(overrides: [apiClientProvider.overrideWithValue(_FakeApiClient())], child: MaterialApp(localizationsDelegates: const [AppStringsDelegate(), GlobalMaterialLocalizations.delegate, GlobalWidgetsLocalizations.delegate, GlobalCupertinoLocalizations.delegate], supportedLocales: const [Locale('en'), Locale('my')], home: child));
@@ -92,6 +114,22 @@ void main() {
     await controller.translate();
     expect(controller.state.error?.code, 'RATE_LIMIT_EXCEEDED');
     expect(controller.state.output, isEmpty);
+  });
+
+  testWidgets('voice page renders selectors, recording limit, and editable transcript', (tester) async {
+    await tester.pumpWidget(ProviderScope(overrides: [apiClientProvider.overrideWithValue(_VoiceApiClient())], child: MaterialApp(localizationsDelegates: const [AppStringsDelegate(), GlobalMaterialLocalizations.delegate, GlobalWidgetsLocalizations.delegate, GlobalCupertinoLocalizations.delegate], supportedLocales: const [Locale('en'), Locale('my')], home: const VoicePage())));
+    await tester.pumpAndSettle();
+    expect(find.text('Voice translator'), findsOneWidget);
+    expect(find.text('00:00 / 00:15'), findsOneWidget);
+    expect(find.text('Spoken language'), findsOneWidget);
+    expect(find.text('Transcript'), findsOneWidget);
+    expect(find.byType(TextField), findsOneWidget);
+  });
+
+  test('speech capability mapping preserves Burmese locale and voice metadata', () {
+    final capabilities = SpeechCapabilities.fromJson({'provider': 'azure', 'provider_configured': true, 'speech_recognition': true, 'speech_synthesis': true, 'languages': [{'text_code': 'my', 'locale': 'my-MM', 'stt_enabled': true, 'tts_enabled': true, 'voices': [{'name': 'my-MM-NilarNeural', 'locale': 'my-MM', 'gender': 'Female'}]}]});
+    expect(capabilities.languages.single.locale, 'my-MM');
+    expect(capabilities.languages.single.voices.single.name, 'my-MM-NilarNeural');
   });
 }
 

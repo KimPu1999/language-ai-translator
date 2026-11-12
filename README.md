@@ -1,6 +1,6 @@
-# Lingua AI Translator — Phase 2B
+# Lingua AI Translator — Phase 3A
 
-Phase 2B adds reliability controls around the Phase 2A Azure Translator integration: capability-aware provider selection, Unicode-safe limits, request/character rate limits, request IDs, bounded timeout mapping, and metadata-only usage events. Azure credentials are never sent to clients, and translation text is not persisted by the translation endpoints.
+Phase 3A adds the Azure Speech provider foundation on top of the Phase 2 translation reliability controls. Speech recognition and synthesis use injectable interfaces, locale-aware capability metadata, server-only credentials, and bounded thread-offloaded SDK calls. No speech capture or upload product flow is enabled in this phase.
 
 ## Run locally
 
@@ -12,9 +12,13 @@ Phase 2B adds reliability controls around the Phase 2A Azure Translator integrat
 
 Web and mobile setup details are documented in [docs/local-development.md](docs/local-development.md).
 
-The API exposes `GET /health/live`, `GET /health/ready`, `GET /api/v1/languages`, `GET /api/v1/capabilities`, and `POST /api/v1/translations/text`.
+The API exposes `GET /health/live`, `GET /health/ready`, `GET /api/v1/languages`, `GET /api/v1/capabilities`, `GET /api/v1/speech/capabilities`, and `POST /api/v1/translations/text`.
+
+Phase 3B adds `POST /api/v1/voice/transcribe` for bounded raw audio requests and `POST /api/v1/voice/synthesize` for inline WAV responses. See [docs/phase-3b.md](docs/phase-3b.md) for request formats and FFmpeg requirements.
 
 Phase 2A also exposes `POST /api/v1/translations/detect`. Azure configuration and response/error behavior are documented in [docs/phase-2a.md](docs/phase-2a.md). Phase 2B details are in [docs/phase-2b.md](docs/phase-2b.md).
+
+Speech configuration and locale mappings are documented in [docs/phase-3a.md](docs/phase-3a.md).
 
 ## Current scope
 

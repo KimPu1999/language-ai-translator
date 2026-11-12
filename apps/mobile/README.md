@@ -1,4 +1,4 @@
-# Lingua Mobile — Phase 2D
+# Lingua Mobile — Phase 3E
 
 Flutter/Dart mobile client for the FastAPI service. The app uses Riverpod for state, GoRouter for navigation, Dio for HTTP, Material 3, SharedPreferences for explicit local saves, a shared blue-white design system, and a small dependency-free EN/MM localization layer.
 
@@ -23,11 +23,21 @@ flutter run --dart-define=API_BASE_URL=http://localhost:8000
 
 For older macOS/Xcode installations, use a Flutter SDK compatible with the installed Xcode and iOS deployment target. If CocoaPods reports a deployment-target or architecture issue, update the Podfile target only to the maximum supported by that Xcode, run `pod repo update`/`pod install`, and avoid upgrading Xcode-dependent packages blindly. Device signing, simulator builds, and native platform files were not verifiable in this environment because Flutter/Dart are not installed.
 
-## Phase 2D scope
+## Phase 3 scope
 
-Text translation, Auto Detect, language loading, capabilities loading, swapping, Unicode-safe 5,000-character input, loading/error/retry states, copy, theme switching, and EN/MM switching are implemented. Voice, Camera, OCR, Documents, auth, and provider integrations are intentionally unavailable and are never simulated. A backend `503 TRANSLATION_ENGINE_NOT_CONFIGURED`, `429`, timeout, or network response is shown as an actionable error and no invented result is displayed.
+Text translation, voice recording, real speech-to-text, editable Myanmar Unicode transcripts, Phase 2 text translation, Azure-backed TTS playback, language/voice selectors, loading/error/retry states, theme switching, and EN/MM switching are implemented. Camera, OCR, Documents, auth, and provider keys remain outside the app. Recording begins only after explicit user action and stops on cancel, lifecycle changes, unmount, or 15 seconds. Temporary recording and playback files are deleted and are never added to local history.
+
+The existing Phase 3B FastAPI contract accepts bounded raw audio bytes with an `audio/*` content type and `locale` query parameter. The mobile client sends the selected recording bytes directly to that contract; it does not fabricate multipart fields that the current backend does not accept.
+
+### Native microphone setup
+
+When generating platform folders, add `android.permission.RECORD_AUDIO` to the Android application manifest and `NSMicrophoneUsageDescription` to iOS `Info.plist`. The `record` package still requests permission at runtime; the app never starts a recorder before `hasPermission()` succeeds. `AudioEncoder.opus` is preferred and AAC/M4A is selected when Opus is unavailable.
 
 History and favorites are local-only and opt-in from Settings. Nothing is saved automatically; individual successful results must be explicitly saved. Disabling the option clears the local entries.
+
+## Two-way conversation
+
+The Conversation route provides independent Person A and Person B speech/target language and voice profiles. Turns use push-to-talk, one recorder at a time, a 15-second limit, editable transcripts, the existing FastAPI transcription/translation/TTS calls, and per-turn replay. Unique turn IDs and a controller version invalidate stale responses. Audio remains in temporary files only and is removed after use or session clear; text is saved only through the explicit local-save action when Settings enables local saving. This is turn-based and does not claim full-duplex streaming or cloud synchronization.
 
 ## Verification
 

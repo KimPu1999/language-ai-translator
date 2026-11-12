@@ -16,6 +16,7 @@ import {
   Home,
   Languages,
   Menu,
+  MessageCircle,
   Mic,
   Moon,
   RotateCcw,
@@ -31,12 +32,15 @@ import { api } from "./api";
 import i18n from "./i18n";
 import { usePreferences } from "./store";
 import type { Language } from "./types";
+import VoicePage from "./VoicePage";
+import ConversationPage from "./ConversationPage";
 
 const MAX_CHARACTERS = 5000;
 const navItems: { to: string; label: string; icon: LucideIcon }[] = [
   { to: "/", label: "Home", icon: Home },
   { to: "/translate", label: "Text Translator", icon: Languages },
   { to: "/voice", label: "Voice", icon: Mic },
+  { to: "/conversation", label: "Conversation", icon: MessageCircle },
   { to: "/camera", label: "Camera", icon: Camera },
   { to: "/documents", label: "Documents", icon: FileText },
   { to: "/history", label: "History", icon: History },
@@ -57,7 +61,8 @@ function App() {
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/translate" element={<TranslatorPage />} />
-            <Route path="/voice" element={<UnavailablePage type="voice" icon={Mic} />} />
+            <Route path="/voice" element={<VoicePage />} />
+            <Route path="/conversation" element={<ConversationPage />} />
             <Route path="/camera" element={<UnavailablePage type="camera" icon={Camera} />} />
             <Route path="/documents" element={<UnavailablePage type="documents" icon={FileText} />} />
             <Route path="/history" element={<CollectionPage type="history" />} />
@@ -89,7 +94,7 @@ function NavItem({ to, label, Icon }: { to: string; label: string; Icon: LucideI
 function MobileNav() { return <nav aria-label="Mobile navigation" className="surface fixed inset-x-0 bottom-0 z-20 grid grid-cols-4 border-t border-slate-200 bg-white/95 px-2 py-2 backdrop-blur lg:hidden dark:bg-[#101d31]/95">{navItems.slice(0, 4).map(({ to, label, icon: Icon }) => <NavLink key={to} to={to} className={({ isActive }) => `grid place-items-center gap-1 rounded-xl py-1 text-[10px] font-semibold ${isActive ? "text-blue-600" : "text-slate-400"}`}><Icon size={18} /><span>{label === "Text Translator" ? "Translate" : label}</span></NavLink>)}</nav>; }
 function MobileMenu({ close }: { close: () => void }) { return <div className="fixed inset-0 z-40 bg-navy/25 lg:hidden" onClick={close}><aside className="surface h-full w-[min(84vw,320px)] bg-white p-5 shadow-2xl dark:bg-[#13233b]" onClick={(event) => event.stopPropagation()}><div className="mb-8 flex items-center justify-between"><span className="font-extrabold">Menu</span><button aria-label="Close navigation" onClick={close}><X size={20} /></button></div><nav className="space-y-1">{navItems.map(({ to, label, icon: Icon }) => <NavItem key={to} to={to} label={label} Icon={Icon} />)}<NavItem to="/settings" label="Settings" Icon={SettingsIcon} /></nav></aside></div>; }
 
-function HomePage() { const { t } = useTranslation(); const navigate = useNavigate(); return <div className="mx-auto max-w-5xl"><section className="relative overflow-hidden rounded-[28px] bg-navy px-6 py-10 text-white shadow-soft sm:px-10 sm:py-14"><div className="relative z-10 max-w-xl"><span className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-semibold text-blue-100"><Sparkles size={14} /> Clear words, anywhere</span><h1 className="text-4xl font-extrabold leading-[1.08] tracking-tight sm:text-6xl">{t("tagline")}</h1><p className="mt-5 max-w-md text-sm leading-6 text-blue-100 sm:text-base">A focused workspace for moving between languages with clarity, care, and no invented answers.</p><button className="mt-8 inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-bold text-navy shadow-lg transition hover:-translate-y-0.5" onClick={() => navigate("/translate")}>{t("startTranslating")} <ArrowLeftRight size={17} /></button></div><div className="absolute -right-20 -top-24 h-80 w-80 rounded-full bg-blue-400/20 blur-3xl" /></section><section className="mt-8 grid gap-4 sm:grid-cols-3"><FeatureCard icon={Languages} title="Text" copy="Write and translate with a clear, calm editor." onClick={() => navigate("/translate")} /><FeatureCard icon={Mic} title="Voice" copy="A voice workflow is planned and clearly marked." onClick={() => navigate("/voice")} /><FeatureCard icon={Camera} title="Camera" copy="Image translation is coming in a future phase." onClick={() => navigate("/camera")} /></section></div>; }
+function HomePage() { const { t } = useTranslation(); const navigate = useNavigate(); return <div className="mx-auto max-w-5xl"><section className="relative overflow-hidden rounded-[28px] bg-navy px-6 py-10 text-white shadow-soft sm:px-10 sm:py-14"><div className="relative z-10 max-w-xl"><span className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-semibold text-blue-100"><Sparkles size={14} /> Clear words, anywhere</span><h1 className="text-4xl font-extrabold leading-[1.08] tracking-tight sm:text-6xl">{t("tagline")}</h1><p className="mt-5 max-w-md text-sm leading-6 text-blue-100 sm:text-base">A focused workspace for moving between languages with clarity, care, and no invented answers.</p><button className="mt-8 inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-bold text-navy shadow-lg transition hover:-translate-y-0.5" onClick={() => navigate("/translate")}>{t("startTranslating")} <ArrowLeftRight size={17} /></button></div><div className="absolute -right-20 -top-24 h-80 w-80 rounded-full bg-blue-400/20 blur-3xl" /></section><section className="mt-8 grid gap-4 sm:grid-cols-3"><FeatureCard icon={Languages} title="Text" copy="Write and translate with a clear, calm editor." onClick={() => navigate("/translate")} /><FeatureCard icon={Mic} title="Voice" copy="Record, review, translate, and listen back." onClick={() => navigate("/voice")} /><FeatureCard icon={Camera} title="Camera" copy="Image translation is coming in a future phase." onClick={() => navigate("/camera")} /></section></div>; }
 function FeatureCard({ icon: Icon, title, copy, onClick }: { icon: LucideIcon; title: string; copy: string; onClick: () => void }) { return <button onClick={onClick} className="surface group rounded-2xl border border-slate-200 bg-white p-5 text-left transition hover:-translate-y-0.5 hover:shadow-soft dark:border-slate-700"><span className="mb-7 grid h-10 w-10 place-items-center rounded-xl bg-sky text-blue-600"><Icon size={19} /></span><p className="font-bold">{title}</p><p className="subtle mt-1 text-sm leading-5">{copy}</p><span className="mt-5 block text-xs font-bold text-blue-600 opacity-0 transition group-hover:opacity-100">Open →</span></button>; }
 
 function useLanguageData() { const languages = useQuery({ queryKey: ["languages"], queryFn: api.getLanguages }); const capabilities = useQuery({ queryKey: ["capabilities"], queryFn: api.getCapabilities }); return { languages, capabilities }; }

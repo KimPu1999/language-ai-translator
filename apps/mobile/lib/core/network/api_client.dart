@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 
+import '../models/speech.dart';
 import '../models/translation.dart';
 
 const apiBaseUrl = String.fromEnvironment(
@@ -33,6 +34,11 @@ class ApiClient {
     return _request(() => _dio.get<Map<String, dynamic>>('/api/v1/capabilities'));
   }
 
+  Future<SpeechCapabilities> getSpeechCapabilities() async {
+    final raw = await _request<Map<String, dynamic>>(() => _dio.get<Map<String, dynamic>>('/api/v1/speech/capabilities'));
+    return SpeechCapabilities.fromJson(raw);
+  }
+
   Future<TranslationResponse> translateText({required String? sourceLanguage, required String targetLanguage, required String text}) async {
     final raw = await _request<Map<String, dynamic>>(() => _dio.post<Map<String, dynamic>>('/api/v1/translations/text', data: {
       'source_language': sourceLanguage,
@@ -40,6 +46,23 @@ class ApiClient {
       'text': text,
     }));
     return TranslationResponse.fromJson(raw);
+  }
+
+  Future<VoiceTranscription> transcribeVoice({required List<int> audioBytes, required String locale, required String mimeType, CancelToken? cancelToken}) async {
+    final raw = await _request<Map<String, dynamic>>(() => _dio.post<Map<String, dynamic>>('/api/v1/voice/transcribe?locale=${Uri.encodeQueryComponent(locale)}', data: audioBytes, cancelToken: cancelToken, options: Options(contentType: mimeType)));
+    return VoiceTranscription.fromJson(raw);
+  }
+
+  Future<List<int>> synthesizeVoice({required String text, required String locale, required String voice, CancelToken? cancelToken}) async {
+    try {
+      final response = await _dio.post<List<int>>('/api/v1/voice/synthesize', data: {'text': text, 'locale': locale, 'voice': voice}, cancelToken: cancelToken, options: Options(responseType: ResponseType.bytes, contentType: Headers.jsonContentType));
+      return response.data ?? const <int>[];
+    } on DioException catch (error) {
+      final data = error.response?.data;
+      final body = data is Map ? Map<String, dynamic>.from(data) : <String, dynamic>{};
+      final errorBody = body['error'] is Map ? Map<String, dynamic>.from(body['error'] as Map) : <String, dynamic>{};
+      throw ApiFailure(errorBody['code'] as String? ?? 'NETWORK_ERROR', errorBody['message'] as String? ?? _networkMessage(error), statusCode: error.response?.statusCode);
+    }
   }
 
   Future<T> _request<T>(Future<Response<T>> Function() request) async {

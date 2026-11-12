@@ -8,7 +8,7 @@ import App from "./App";
 import { api } from "./api";
 import "./i18n";
 
-vi.mock("./api", () => ({ api: { getLanguages: vi.fn(), getCapabilities: vi.fn(), translateText: vi.fn() } }));
+vi.mock("./api", () => ({ api: { getLanguages: vi.fn(), getCapabilities: vi.fn(), getSpeechCapabilities: vi.fn(), translateText: vi.fn(), transcribeVoice: vi.fn(), synthesizeVoice: vi.fn() } }));
 
 function renderApp() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -21,6 +21,7 @@ beforeEach(() => {
     { code: "my", name: "Burmese", is_source_enabled: true, is_target_enabled: true },
   ]);
   vi.mocked(api.getCapabilities).mockResolvedValue({ text_translation: false, provider_configured: false, supported_operations: ["text_translation"] });
+  vi.mocked(api.getSpeechCapabilities).mockResolvedValue({ provider: null, provider_configured: false, speech_recognition: false, speech_synthesis: false, languages: [] });
   vi.mocked(api.translateText).mockRejectedValue(new Error("Translation engine is not configured"));
   window.history.pushState({}, "", "/translate");
 });
@@ -57,7 +58,8 @@ describe("Phase 1B translator", () => {
     const user = userEvent.setup();
     renderApp();
     await user.click(screen.getAllByRole("link", { name: "Voice" })[0]);
-    expect(await screen.findByText("Voice translation is not ready")).toBeInTheDocument();
+    expect(await screen.findByText("Voice translator")).toBeInTheDocument();
+    expect(screen.getByText("Voice processing is not configured. No audio will be uploaded.")).toBeInTheDocument();
   });
 
   it("renders a real result, supports copy, and swaps languages", async () => {
@@ -103,6 +105,16 @@ describe("Phase 1B translator", () => {
     expect(document.activeElement).toBeTruthy();
     await user.click(localSwitch);
     expect(localSwitch).toHaveAttribute("aria-checked", "true");
+  });
+
+  it("opens the two-person push-to-talk conversation workspace", async () => {
+    const user = userEvent.setup();
+    renderApp();
+    await user.click(screen.getAllByRole("link", { name: "Conversation" })[0]);
+    expect(await screen.findByText("Two-way conversation")).toBeInTheDocument();
+    expect(screen.getByText("Person A")).toBeInTheDocument();
+    expect(screen.getByText("Person B")).toBeInTheDocument();
+    expect(screen.getByText(/only one microphone records at a time/i)).toBeInTheDocument();
   });
 });
 

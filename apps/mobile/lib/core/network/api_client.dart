@@ -1,5 +1,7 @@
 import 'package:dio/dio.dart';
 
+import '../models/translation.dart';
+
 const apiBaseUrl = String.fromEnvironment(
   'API_BASE_URL',
   defaultValue: 'http://localhost:8000',
@@ -18,7 +20,7 @@ class ApiFailure implements Exception {
 
 class ApiClient {
   ApiClient({Dio? dio})
-      : _dio = dio ?? Dio(BaseOptions(baseUrl: apiBaseUrl, connectTimeout: const Duration(seconds: 8), receiveTimeout: const Duration(seconds: 12)));
+      : _dio = dio ?? Dio(BaseOptions(baseUrl: apiBaseUrl, connectTimeout: const Duration(seconds: 8), sendTimeout: const Duration(seconds: 8), receiveTimeout: const Duration(seconds: 12)));
 
   final Dio _dio;
 
@@ -31,12 +33,13 @@ class ApiClient {
     return _request(() => _dio.get<Map<String, dynamic>>('/api/v1/capabilities'));
   }
 
-  Future<Map<String, dynamic>> translateText({required String sourceLanguage, required String targetLanguage, required String text}) async {
-    return _request(() => _dio.post<Map<String, dynamic>>('/api/v1/translations/text', data: {
+  Future<TranslationResponse> translateText({required String? sourceLanguage, required String targetLanguage, required String text}) async {
+    final raw = await _request<Map<String, dynamic>>(() => _dio.post<Map<String, dynamic>>('/api/v1/translations/text', data: {
       'source_language': sourceLanguage,
       'target_language': targetLanguage,
       'text': text,
     }));
+    return TranslationResponse.fromJson(raw);
   }
 
   Future<T> _request<T>(Future<Response<T>> Function() request) async {

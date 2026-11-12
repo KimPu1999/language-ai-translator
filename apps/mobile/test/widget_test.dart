@@ -6,9 +6,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lingua_mobile/core/localization/app_strings.dart';
 import 'package:lingua_mobile/core/models/language.dart';
 import 'package:lingua_mobile/core/network/api_client.dart';
+import 'package:lingua_mobile/core/models/translation.dart';
 import 'package:lingua_mobile/core/providers/app_providers.dart';
 import 'package:lingua_mobile/features/text/text_page.dart';
 import 'package:lingua_mobile/widgets/feature_unavailable.dart';
+import 'package:lingua_mobile/features/text/text_controller.dart';
 
 class _FakeApiClient extends ApiClient {
   @override
@@ -19,6 +21,18 @@ class _FakeApiClient extends ApiClient {
 
   @override
   Future<Map<String, dynamic>> getCapabilities() async => {'text_translation': false, 'provider_configured': false, 'supported_operations': ['text_translation']};
+}
+
+class _TranslationApiClient extends ApiClient {
+  _TranslationApiClient({this.failure});
+  final ApiFailure? failure;
+  String? receivedSource;
+  @override
+  Future<TranslationResponse> translateText({required String? sourceLanguage, required String targetLanguage, required String text}) async {
+    receivedSource = sourceLanguage;
+    if (failure != null) throw failure!;
+    return const TranslationResponse(translatedText: 'Hello', provider: 'test');
+  }
 }
 
 Widget _wrap(Widget child) => ProviderScope(overrides: [apiClientProvider.overrideWithValue(_FakeApiClient())], child: MaterialApp(localizationsDelegates: const [AppStringsDelegate(), GlobalMaterialLocalizations.delegate, GlobalWidgetsLocalizations.delegate, GlobalCupertinoLocalizations.delegate], supportedLocales: const [Locale('en'), Locale('my')], home: child));
@@ -56,6 +70,28 @@ void main() {
     final language = Language.fromJson({'code': 'zh-Hans', 'name': 'Simplified Chinese', 'is_source_enabled': true, 'is_target_enabled': true});
     expect(language.code, 'zh-Hans');
     expect(language.isTargetEnabled, isTrue);
+  });
+
+  test('translation controller sends Auto Detect as null and handles Unicode input', () async {
+    final client = _TranslationApiClient();
+    final controller = TextTranslationController(client);
+    controller.setSource(null);
+    controller.setInput('မင်္ဂလာပါ');
+    await controller.translate();
+    expect(client.receivedSource, isNull);
+    expect(controller.state.output, 'Hello');
+    expect(controller.state.input, 'မင်္ဂလာပါ');
+  });
+
+  test('translation controller exposes a retryable API failure and swaps languages', () async {
+    final controller = TextTranslationController(_TranslationApiClient(failure: const ApiFailure('RATE_LIMIT_EXCEEDED', 'Try later', statusCode: 429)));
+    controller.setInput('Hello');
+    controller.swap();
+    expect(controller.state.source, 'my');
+    expect(controller.state.target, 'en');
+    await controller.translate();
+    expect(controller.state.error?.code, 'RATE_LIMIT_EXCEEDED');
+    expect(controller.state.output, isEmpty);
   });
 }
 

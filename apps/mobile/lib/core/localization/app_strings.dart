@@ -24,6 +24,15 @@ class AppStrings {
   String get unavailableBody => isMyanmar ? 'ဤလုပ်ဆောင်ချက်ကို နောက်ထွက်ဗားရှင်းတွင် ထည့်သွင်းမည်။' : 'This feature is planned for a future release.';
   String get noHistory => isMyanmar ? 'မှတ်တမ်း မရှိသေးပါ' : 'No saved history';
   String get noFavorites => isMyanmar ? 'အကြိုက်ဆုံး မရှိသေးပါ' : 'No favorites yet';
+  String get history => isMyanmar ? 'မှတ်တမ်း' : 'History';
+  String get favorites => isMyanmar ? 'အကြိုက်ဆုံး' : 'Favorites';
+  String get localSaving => isMyanmar ? 'စက်တွင်း မှတ်တမ်းနှင့် အကြိုက်ဆုံး' : 'Local history and favorites';
+  String get localSavingBody => isMyanmar ? 'သင်ကိုယ်တိုင် သိမ်းထားသောအရာများကို ဤစက်တွင် သိမ်းထားခွင့်ပြုပါ။' : 'Only translations you explicitly save remain on this device.';
+  String get localSavingOff => isMyanmar ? 'စက်တွင်း သိမ်းဆည်းခြင်း ပိတ်ထားသည်' : 'Local saving is off';
+  String get localSavingOffBody => isMyanmar ? 'မည်သည့်အရာကိုမျှ အလိုအလျောက် မသိမ်းပါ။ Settings တွင် ဖွင့်ပြီး ရလဒ်တစ်ခုချင်းစီကို ကိုယ်တိုင်သိမ်းပါ။' : 'Nothing is stored automatically. Enable local saving in Settings, then save individual results yourself.';
+  String get saveLocally => isMyanmar ? 'စက်တွင်း သိမ်းရန်' : 'Save locally';
+  String get clear => isMyanmar ? 'ရှင်းလင်းရန်' : 'Clear';
+  String get favorite => isMyanmar ? 'အကြိုက်ဆုံး' : 'Favorite translation';
   String get providerUnavailable => isMyanmar ? 'ဘာသာပြန်စနစ် မရရှိနိုင်သေးပါ' : 'Translation is not available yet';
   String get providerBody => isMyanmar ? 'ဘာသာပြန်စနစ်ကို မသတ်မှတ်ရသေးသောကြောင့် သင့်စာကို သိမ်းဆည်းခြင်း သို့မဟုတ် ဘာသာပြန်ခြင်း မပြုလုပ်ပါ။' : 'The translation engine is not configured. Your text was not saved or translated.';
   String get languagesError => isMyanmar ? 'ဘာသာစကားများကို ရယူ၍ မရပါ။' : 'Languages could not be loaded.';

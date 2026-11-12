@@ -15,15 +15,17 @@ class Language {
 }
 
 class Capabilities {
-  const Capabilities({required this.textTranslation, required this.providerConfigured, required this.supportedOperations});
+  const Capabilities({required this.textTranslation, required this.languageDetection, required this.providerConfigured, required this.supportedOperations});
 
   factory Capabilities.fromJson(Map<String, dynamic> json) => Capabilities(
         textTranslation: json['text_translation'] as bool? ?? false,
+        languageDetection: json['language_detection'] as bool? ?? false,
         providerConfigured: json['provider_configured'] as bool? ?? false,
         supportedOperations: (json['supported_operations'] as List<dynamic>? ?? const []).cast<String>(),
       );
 
   final bool textTranslation;
+  final bool languageDetection;
   final bool providerConfigured;
   final List<String> supportedOperations;
 }

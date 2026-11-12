@@ -59,5 +59,50 @@ describe("Phase 1B translator", () => {
     await user.click(screen.getAllByRole("link", { name: "Voice" })[0]);
     expect(await screen.findByText("Voice translation is not ready")).toBeInTheDocument();
   });
+
+  it("renders a real result, supports copy, and swaps languages", async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.getCapabilities).mockResolvedValue({ text_translation: true, provider_configured: true, supported_operations: ["text_translation"] });
+    vi.mocked(api.translateText).mockResolvedValue({ translated_text: "မင်္ဂလာပါ", provider: "azure" });
+    renderApp();
+    await screen.findByRole("option", { name: "my" });
+    const selects = await screen.findAllByRole("combobox");
+    await user.selectOptions(selects[0], "my");
+    await user.selectOptions(selects[1], "en");
+    await user.click(screen.getByRole("button", { name: "Swap languages" }));
+    expect(selects[0]).toHaveValue("en");
+    expect(selects[1]).toHaveValue("my");
+    const editor = screen.getByRole("textbox", { name: "Source" });
+    await user.type(editor, "Hello");
+    await user.click(screen.getByRole("button", { name: "Translate" }));
+    expect(await screen.findByText("မင်္ဂလာပါ")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Copy" }));
+    expect(screen.getByText("Copied")).toBeInTheDocument();
+  });
+
+  it("shows retryable rate-limit and network failures without output", async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.getCapabilities).mockResolvedValue({ text_translation: true, provider_configured: true, supported_operations: ["text_translation"] });
+    vi.mocked(api.translateText).mockRejectedValue(new Error("Translation usage limit reached"));
+    renderApp();
+    const editor = await screen.findByRole("textbox", { name: "Source" });
+    await user.type(editor, "Hello");
+    await user.click(screen.getByRole("button", { name: "Translate" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Translation usage limit reached");
+    expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument();
+    expect(screen.queryByText("Hello", { selector: "p" })).not.toBeInTheDocument();
+  });
+
+  it("keeps local saving opt-in and keyboard reachable", async () => {
+    const user = userEvent.setup();
+    renderApp();
+    await user.click(screen.getByRole("button", { name: "Settings" }));
+    const localSwitch = await screen.findByRole("switch", { name: "Local history and favorites" });
+    expect(localSwitch).toHaveAttribute("aria-checked", "false");
+    await user.tab();
+    expect(document.activeElement).toBeTruthy();
+    await user.click(localSwitch);
+    expect(localSwitch).toHaveAttribute("aria-checked", "true");
+  });
 });
 

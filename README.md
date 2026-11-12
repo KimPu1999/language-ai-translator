@@ -26,9 +26,13 @@ Phase 4E adds an optional Google Cloud Vision adapter. Tesseract remains the def
 
 Phase 5A adds bounded PDF, DOCX, and UTF-8 TXT extraction at `/api/v1/documents`. Extraction is review-only, supports structured blocks and OCR fallback for scanned PDF pages, and never translates or stores document contents. See [docs/phase-5a.md](docs/phase-5a.md).
 
-Phase 5B adds a disabled-by-default Celery/Redis document job system with private storage, PostgreSQL job ownership, expiration, cancellation, retries, and metadata-only usage records. See [docs/phase-5b.md](docs/phase-5b.md). Authentication is not yet implemented, so only the explicitly enabled development guest capability flow is available.
+Phase 5B adds a disabled-by-default Celery/Redis document job system with private storage, PostgreSQL job ownership, expiration, cancellation, retries, and metadata-only usage records. See [docs/phase-5b.md](docs/phase-5b.md). Phase 6B adds authenticated document ownership while retaining the explicit development-only guest flow.
+
+Phase 6A adds first-party email/password authentication with Argon2 passwords, verified-email login, opaque revocable PostgreSQL sessions, web cookie/CSRF protection, mobile Bearer sessions, password reset, session listing/revocation, and pluggable SMTP/development mailbox delivery. See [docs/phase-6a.md](docs/phase-6a.md).
+
+Phase 6B adds authenticated profiles, preferences, explicit opt-in private history, favorites, account export/deletion, and session-derived ownership for Phase 5 document jobs. See [docs/phase-6b.md](docs/phase-6b.md).
 
 ## Current scope
 
-The repository is organized as `apps/web`, `apps/mobile`, `services/api`, `packages/contracts`, `infra`, and `docs`. History and user records have no public endpoints, there are no auth endpoints, source/translated text is not stored by translation requests, and the API refuses non-PostgreSQL URLs.
+The repository is organized as `apps/web`, `apps/mobile`, `services/api`, `packages/contracts`, `infra`, and `docs`. History and user records remain protected, source/translated text is not stored by translation requests, and the API refuses non-PostgreSQL URLs.
 

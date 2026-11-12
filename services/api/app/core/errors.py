@@ -6,6 +6,9 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.exc import SQLAlchemyError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from app.core.account_errors import AccountDataError
+from app.core.auth_errors import AuthenticationError
+
 
 def error_payload(
     code: str,
@@ -60,3 +63,21 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException) 
             request_id=request.state.request_id,
         )
     return JSONResponse(status_code=exc.status_code, content=content, headers=exc.headers)
+
+
+async def authentication_exception_handler(
+    request: Request, exc: AuthenticationError
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=error_payload(exc.code, exc.message, request_id=request.state.request_id),
+    )
+
+
+async def account_data_exception_handler(
+    request: Request, exc: AccountDataError
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=error_payload(exc.code, exc.message, request_id=request.state.request_id),
+    )

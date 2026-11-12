@@ -54,6 +54,23 @@ class Settings(BaseSettings):
     document_job_rate_limit_requests: int = 10
     document_job_time_limit_seconds: int = 150
     document_pdf_font_path: str | None = None
+    auth_session_ttl_seconds: int = 60 * 60 * 24 * 30
+    auth_action_token_ttl_seconds: int = 15 * 60
+    auth_cookie_name: str = "lingua_session"
+    auth_csrf_cookie_name: str = "lingua_csrf"
+    auth_cookie_secure: bool = False
+    auth_public_base_url: str = "http://localhost:5173"
+    auth_password_min_length: int = 12
+    auth_login_rate_limit_attempts: int = 5
+    auth_action_rate_limit_attempts: int = 10
+    auth_rate_limit_window_seconds: int = 300
+    auth_smtp_host: str | None = None
+    auth_smtp_port: int = 587
+    auth_smtp_username: str | None = None
+    auth_smtp_password: SecretStr | None = None
+    auth_smtp_from: str | None = None
+    auth_smtp_starttls: bool = True
+    auth_dev_mailbox_dir: str | None = None
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
@@ -219,6 +236,79 @@ class Settings(BaseSettings):
         if value <= 0:
             raise ValueError("Document job limits must be positive")
         return value
+
+    @field_validator(
+        "auth_session_ttl_seconds",
+        "auth_action_token_ttl_seconds",
+        "auth_password_min_length",
+        "auth_login_rate_limit_attempts",
+        "auth_action_rate_limit_attempts",
+        "auth_rate_limit_window_seconds",
+        "auth_smtp_port",
+    )
+    @classmethod
+    def require_positive_auth_limits(cls, value: int) -> int:
+        if value <= 0:
+            raise ValueError("Authentication limits must be positive")
+        return value
+
+    @field_validator("auth_password_min_length")
+    @classmethod
+    def require_secure_password_length(cls, value: int) -> int:
+        if value < 12:
+            raise ValueError("AUTH_PASSWORD_MIN_LENGTH must be at least 12")
+        return value
+
+    @field_validator(
+        "auth_smtp_host", "auth_smtp_username", "auth_smtp_from", "auth_dev_mailbox_dir",
+        mode="before",
+    )
+    @classmethod
+    def normalize_optional_auth_values(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        stripped = value.strip()
+        return stripped or None
+
+    @field_validator("auth_public_base_url")
+    @classmethod
+    def validate_auth_public_base_url(cls, value: str) -> str:
+        parsed = urlparse(value.rstrip("/"))
+        if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+            raise ValueError("AUTH_PUBLIC_BASE_URL must be an absolute HTTP(S) URL")
+        return value.rstrip("/")
+
+    @field_validator("auth_smtp_password", mode="before")
+    @classmethod
+    def normalize_smtp_password(
+        cls, value: str | SecretStr | None
+    ) -> str | SecretStr | None:
+        if value is None:
+            return None
+        raw = value.get_secret_value() if isinstance(value, SecretStr) else value
+        return raw.strip() or None
+
+    @model_validator(mode="after")
+    def validate_email_configuration(self) -> "Settings":
+        smtp_values = (
+            self.auth_smtp_host,
+            self.auth_smtp_username,
+            self.auth_smtp_password,
+            self.auth_smtp_from,
+        )
+        if any(smtp_values) and not all(smtp_values):
+            raise ValueError(
+                "AUTH_SMTP_HOST, AUTH_SMTP_USERNAME, AUTH_SMTP_PASSWORD and AUTH_SMTP_FROM "
+                "must be configured together"
+            )
+        if self.auth_dev_mailbox_dir and self.app_env.lower() != "development":
+            raise ValueError("AUTH_DEV_MAILBOX_DIR is allowed only in development")
+        if self.app_env.lower() in {"production", "prod"}:
+            if not self.auth_cookie_secure:
+                raise ValueError("AUTH_COOKIE_SECURE must be true in production")
+            if not self.auth_public_base_url.startswith("https://"):
+                raise ValueError("AUTH_PUBLIC_BASE_URL must use HTTPS in production")
+        return self
 
     @model_validator(mode="after")
     def validate_guest_document_mode(self) -> "Settings":

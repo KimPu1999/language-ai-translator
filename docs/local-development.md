@@ -8,6 +8,16 @@
 4. Apply migrations from `services/api`: `alembic upgrade head`.
 5. Start the API from the repository root: `uvicorn app.main:app --app-dir services/api --reload`.
 
+For Phase 6A local account testing, set `AUTH_DEV_MAILBOX_DIR` to a private
+directory and inspect the generated `.eml` files directly. Do not expose that
+directory through the API or commit it. Configure all SMTP fields together for
+real delivery; the API returns an explicit email-unavailable error when no
+provider is configured.
+
+Phase 6B profile, history, favorites, export, deletion, and authenticated
+document-job routes require a verified session. History remains disabled until
+the account explicitly sets `history_enabled=true` in preferences.
+
 ## Web
 
 From `apps/web`, copy `.env.example` to `.env`, run `npm ci`, then `npm run dev`. Use `npm run lint`, `npm test -- --run`, and `npm run build` for verification.

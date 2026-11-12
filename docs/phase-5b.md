@@ -1,6 +1,6 @@
 # Phase 5B — Secure Document Job System
 
-Document jobs are disabled by default. This repository has no authentication implementation, so the API refuses document-job requests unless all of the following are true:
+Document jobs are disabled by default. Authenticated Phase 6A sessions own document jobs with a server-derived `user:<uuid>` subject. For local development without an account, the API refuses document-job requests unless all of the following guest-only conditions are true:
 
 ```env
 APP_ENV=development
@@ -10,7 +10,7 @@ DOCUMENT_GUEST_MODE_ENABLED=true
 DOCUMENT_GUEST_CAPABILITY_TOKEN=<local-only-random-token>
 ```
 
-The guest capability token is accepted through `X-Document-Capability-Token` and is hashed into the job owner subject. The guest mode validator rejects non-development environments. A production deployment must add real authentication and replace this dependency before enabling document jobs.
+The guest capability token is accepted through `X-Document-Capability-Token` and is hashed into the job owner subject. The guest mode validator rejects non-development environments. Authenticated requests take precedence; invalid sessions cannot fall back to the guest capability token.
 
 ## Worker processes
 

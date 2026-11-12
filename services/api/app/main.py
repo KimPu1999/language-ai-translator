@@ -7,6 +7,8 @@ from sqlalchemy.exc import SQLAlchemyError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api.v1.endpoints import (
+    account,
+    auth,
     document_jobs,
     documents,
     health,
@@ -16,9 +18,13 @@ from app.api.v1.endpoints import (
     translations,
     voice,
 )
+from app.core.account_errors import AccountDataError
+from app.core.auth_errors import AuthenticationError
 from app.core.config import get_settings
 from app.core.document_errors import document_error_handler
 from app.core.errors import (
+    account_data_exception_handler,
+    authentication_exception_handler,
     database_exception_handler,
     http_exception_handler,
     validation_exception_handler,
@@ -48,7 +54,11 @@ app.add_exception_handler(RequestValidationError, validation_exception_handler)
 app.add_exception_handler(SQLAlchemyError, database_exception_handler)
 app.add_exception_handler(StarletteHTTPException, http_exception_handler)
 app.add_exception_handler(DocumentExtractionError, document_error_handler)
+app.add_exception_handler(AuthenticationError, authentication_exception_handler)
+app.add_exception_handler(AccountDataError, account_data_exception_handler)
 app.include_router(health.router)
+app.include_router(auth.router)
+app.include_router(account.router)
 app.include_router(languages.router)
 app.include_router(translations.router)
 app.include_router(speech.router)

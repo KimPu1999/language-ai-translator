@@ -5,9 +5,13 @@ import hmac
 from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
-from fastapi import Header, HTTPException
+from fastapi import Depends, Header, HTTPException, Request
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.auth_errors import AuthenticationError
 from app.core.config import Settings, get_settings
+from app.db.session import get_db
+from app.services.auth import get_auth_context
 
 
 def owner_from_capability_token(token: str | None, settings: Settings | None = None) -> str:
@@ -29,8 +33,24 @@ def owner_from_capability_token(token: str | None, settings: Settings | None = N
 
 
 async def require_document_owner(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
     x_document_capability_token: str | None = Header(default=None),
 ) -> str:
+    settings = get_settings()
+    if not settings.document_jobs_enabled:
+        raise HTTPException(status_code=404, detail="Document jobs are unavailable")
+    has_session = bool(
+        request.headers.get("authorization")
+        or request.cookies.get(settings.auth_cookie_name)
+    )
+    if has_session:
+        try:
+            context = await get_auth_context(request, db)
+        except AuthenticationError:
+            # An invalid or expired session must never fall back to a guest token.
+            raise
+        return f"user:{context.user.id}"
     return owner_from_capability_token(x_document_capability_token)
 
 
